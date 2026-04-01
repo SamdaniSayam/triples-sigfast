@@ -66,7 +66,7 @@ jobs:
 
       # ── 7. Smoke test — did it even import? ─────────────
       - name: Smoke test (import check)
-        run: python -c "import triples_sigfast; print('✅ Import successful')"
+        run: python -c "import triples_sigfast; print(' Import successful')"
 
       # ── 8. Mathematical accuracy test ───────────────────
       - name: Run accuracy test
