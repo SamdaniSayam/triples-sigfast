@@ -3,21 +3,22 @@
 # ============================================================
 
 # 1. FIX: Add the missing imports
-import numpy as np
-import pytest
+import os
 
 # 2. FIX: Tell Python how to find your library from this 'tests' subfolder
 # This goes up one level ('..') and finds 'triples_sigfast'
 import sys
-import os
+
+import numpy as np
+import pytest
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from triples_sigfast.core import (
-    rolling_average,
-    ema,
     detect_anomalies,
+    ema,
     ema_crossover_strategy,
+    rolling_average,
 )
-
 
 # --- Fixtures ---
 
