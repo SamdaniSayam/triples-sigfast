@@ -13,8 +13,8 @@ from triples_sigfast.core import (
     rolling_average,
 )
 
-
 # ── Fixtures ─────────────────────────────────────────────────
+
 
 @pytest.fixture
 def sample_data():
@@ -44,8 +44,8 @@ def list_data():
 
 # ── rolling_average ──────────────────────────────────────────
 
-class TestRollingAverage:
 
+class TestRollingAverage:
     def test_output_length(self, sample_data):
         window = 10
         result = rolling_average(sample_data, window)
@@ -107,8 +107,8 @@ class TestRollingAverage:
 
 # ── ema ──────────────────────────────────────────────────────
 
-class TestEma:
 
+class TestEma:
     def test_output_length(self, sample_data):
         result = ema(sample_data, 10)
         assert len(result) == len(sample_data)
@@ -157,8 +157,8 @@ class TestEma:
 
 # ── detect_anomalies ─────────────────────────────────────────
 
-class TestDetectAnomalies:
 
+class TestDetectAnomalies:
     def test_output_length(self, sample_data):
         result = detect_anomalies(sample_data)
         assert len(result) == len(sample_data)
@@ -208,8 +208,8 @@ class TestDetectAnomalies:
 
 # ── ema_crossover_strategy ───────────────────────────────────
 
-class TestEmaCrossoverStrategy:
 
+class TestEmaCrossoverStrategy:
     def test_output_structure(self, sample_data):
         fast_ema, slow_ema, signals = ema_crossover_strategy(sample_data, 5, 20)
         assert len(fast_ema) == len(sample_data)
@@ -247,25 +247,30 @@ class TestEmaCrossoverStrategy:
 
 # ── __init__.py public API ───────────────────────────────────
 
-class TestPublicAPI:
 
+class TestPublicAPI:
     def test_rolling_average_importable(self):
         from triples_sigfast import rolling_average
+
         assert callable(rolling_average)
 
     def test_ema_importable(self):
         from triples_sigfast import ema
+
         assert callable(ema)
 
     def test_detect_anomalies_importable(self):
         from triples_sigfast import detect_anomalies
+
         assert callable(detect_anomalies)
 
     def test_ema_crossover_strategy_importable(self):
         from triples_sigfast import ema_crossover_strategy
+
         assert callable(ema_crossover_strategy)
 
     def test_version_exists(self):
         import triples_sigfast
+
         assert hasattr(triples_sigfast, "__version__")
         assert isinstance(triples_sigfast.__version__, str)

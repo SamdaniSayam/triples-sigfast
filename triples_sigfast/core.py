@@ -20,7 +20,7 @@ def _ensure_float64_numpy(data):
 
 # --- 2. ROLLING AVERAGE (HPC Optimized) ---
 @njit(parallel=True, fastmath=True, cache=True, nogil=True)
-def _numba_rolling_avg(data: np.ndarray, window_size: int):
+def _numba_rolling_avg(data: np.ndarray, window_size: int):  # pragma: no cover
     n = len(data)
     result = np.empty(n - window_size + 1, dtype=np.float64)
     for i in prange(n - window_size + 1):
@@ -60,7 +60,7 @@ def rolling_average(data, window_size: int):
 
 # --- 3. EXPONENTIAL MOVING AVERAGE (HPC Optimized) ---
 @njit(fastmath=True, cache=True, nogil=True)
-def _numba_ema(data: np.ndarray, alpha: float):
+def _numba_ema(data: np.ndarray, alpha: float):  # pragma: no cover
     n = len(data)
     result = np.empty(n, dtype=np.float64)
     result[0] = data[0]
@@ -93,7 +93,7 @@ def ema(data, span: int):
 
 # --- 4. Z-SCORE ANOMALY DETECTION (HPC Optimized) ---
 @njit(parallel=True, fastmath=True, cache=True, nogil=True)
-def _numba_zscore_anomalies(data: np.ndarray, threshold: float):
+def _numba_zscore_anomalies(data: np.ndarray, threshold: float):  # pragma: no cover
     n = len(data)
     mean_val = np.mean(data)
     std_val = np.std(data)
@@ -130,7 +130,7 @@ def detect_anomalies(data, threshold: float = 3.0):
 
 # --- 5. QUANT TRADING: EMA CROSSOVER (HPC Optimized) ---
 @njit(fastmath=True, cache=True, nogil=True)
-def _numba_crossover(fast_ema: np.ndarray, slow_ema: np.ndarray):
+def _numba_crossover(fast_ema: np.ndarray, slow_ema: np.ndarray):  # pragma: no cover
     n = len(fast_ema)
     signals = np.zeros(n, dtype=np.int8)
     for i in range(1, n):
