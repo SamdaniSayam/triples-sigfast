@@ -2,11 +2,7 @@ from setuptools import find_packages, setup
 
 # Read runtime dependencies from requirements.txt
 with open("requirements.txt", encoding="utf-8") as f:
-    required = [
-        line.strip()
-        for line in f
-        if line.strip() and not line.startswith("#")
-    ]
+    required = [line.strip() for line in f if line.strip() and not line.startswith("#")]
 
 # Read long description from README.md
 with open("README.md", encoding="utf-8") as f:
