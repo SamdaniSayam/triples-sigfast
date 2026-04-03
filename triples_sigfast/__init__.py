@@ -9,4 +9,4 @@ from .core.signal import flux_to_dose as flux_to_dose
 from .core.signal import rolling_average as rolling_average
 from .core.signal import savitzky_golay as savitzky_golay
 
-__version__ = "1.2.0"
+__version__ = "1.4.0"
