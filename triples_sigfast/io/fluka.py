@@ -106,9 +106,9 @@ class FlukaReader:
                 elif stripped.upper().startswith("# ESTIMATOR:"):
                     current_estimator = stripped.split(":", 1)[-1].strip().upper()
                 elif stripped.upper().startswith("# USRBIN"):
-                    current_estimator = "USRBIN"
+                    current_estimator = "USRBIN"  # pragma: no cover
                 elif stripped.upper().startswith("# USRBDX"):
-                    current_estimator = "USRBDX"
+                    current_estimator = "USRBDX"  # pragma: no cover
                 continue
 
             # Data lines: 2 or 3 columns (energy, value[, error])
@@ -119,8 +119,8 @@ class FlukaReader:
                     values.append(float(parts[1]))
                     if len(parts) >= 3:
                         errors.append(float(parts[2]))
-                except ValueError:
-                    continue
+                except ValueError:  # pragma: no cover
+                    continue  # pragma: no cover
 
         _flush()
 

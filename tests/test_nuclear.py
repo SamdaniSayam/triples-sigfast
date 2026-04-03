@@ -439,6 +439,15 @@ class TestIsotope:
         b10 = Isotope("B-10")
         assert abs(b10.resonance_integral - 1722.0) < 1
 
+    def test_decay_mode_cf252(self):
+        cf = Isotope("Cf-252")
+        assert isinstance(cf.decay_mode, str)
+        assert len(cf.decay_mode) > 0
+
+    def test_resonance_integral_b10(self):
+        b10 = Isotope("B-10")
+        assert b10.resonance_integral > 0
+
 
 # ═══════════════════════════════════════════════════════════════════
 # dose.py

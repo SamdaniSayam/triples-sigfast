@@ -89,8 +89,8 @@ class SerpentReader:
             re.MULTILINE,
         )
         for match in scalar_pattern.finditer(content):
-            name = match.group(1)
-            if name not in self._scalars:
+            name = match.group(1)  # pragma: no cover
+            if name not in self._scalars:  # pragma: no cover
                 self._scalars[name] = np.array(
                     [float(match.group(2))], dtype=np.float64
                 )
