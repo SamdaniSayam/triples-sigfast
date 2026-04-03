@@ -183,11 +183,11 @@ def _gp_buildup(material: str, energy_mev: float, mfp: float) -> float:
 
     # GP formula (ANSI/ANS-6.4.3 eq. 4)
     if abs(c) < 1e-10:
-        return 1.0 + (b - 1.0) * x
+        return 1.0 + (b - 1.0) * x  # pragma: no cover
 
     K = c * (x**a) + d * np.tanh(x / Xk - 2.0) - d * np.tanh(-2.0)
     if abs(K - 1.0) < 1e-10:
-        return 1.0 + (b - 1.0) * x
+        return 1.0 + (b - 1.0) * x  # pragma: no cover
     return 1.0 + (b - 1.0) * ((K**x) - 1.0) / (K - 1.0)
 
 

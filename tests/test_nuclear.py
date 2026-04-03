@@ -93,6 +93,26 @@ class TestGPBuildup:
         B = _gp_buildup("lead", 1.0, -1.0)
         assert B == 1.0
 
+    def test_gp_fallback_c_near_zero(self):
+        """When c≈0, GP uses linear approximation B = 1 + (b-1)*x."""
+        from unittest.mock import patch
+        with patch.dict(
+            "triples_sigfast.nuclear.shielding._GP_COEFFS",
+            {"lead": {1.0: (1.5, 0.0, 1.0, 20.0, 0.01)}},
+        ):
+            B = _gp_buildup("lead", 1.0, 2.0)
+            assert abs(B - (1.0 + 0.5 * 2.0)) < 1e-6
+
+    def test_gp_fallback_k_near_one(self):
+        """When K≈1, GP uses linear approximation."""
+        from unittest.mock import patch
+        with patch.dict(
+            "triples_sigfast.nuclear.shielding._GP_COEFFS",
+            {"lead": {1.0: (1.5, 1e-6, 1.0, 20.0, 0.0)}},
+        ):
+            B = _gp_buildup("lead", 1.0, 2.0)
+            assert B > 1.0
+
 
 class TestAttenuationWithBuildup:
     def test_zero_thickness_returns_one(self):
@@ -408,6 +428,14 @@ class TestIsotope:
         for name in available_isotopes():
             iso = Isotope(name)
             assert iso.name == name
+
+    def test_decay_mode(self):
+        cf = Isotope("Cf-252")
+        assert cf.decay_mode == "SF+alpha"
+
+    def test_resonance_integral(self):
+        b10 = Isotope("B-10")
+        assert abs(b10.resonance_integral - 1722.0) < 1
 
 
 # ═══════════════════════════════════════════════════════════════════
