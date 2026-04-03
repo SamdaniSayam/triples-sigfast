@@ -3,44 +3,38 @@ name: Generate Changelog
 on:
   release:
     types: [published]
-
-permissions:
-  contents: write
+  workflow_dispatch:
 
 jobs:
   changelog:
+    name: Update CHANGELOG.md
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: main 
 
-      - name: Generate Changelog
-        uses: orhun/git-cliff-action@v3
-        with:
-          config: .github/cliff.toml
-          args: --latest --strip header
-        env:
-          OUTPUT: CHANGELOG.md
-
-      - name: Commit and Push
+      - name: Install git-cliff
         run: |
-          # 1. Setup Bot Identity
+          CLIFF_VERSION=$(curl -s https://api.github.com/repos/orhun/git-cliff/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
+          VERSION_NUM=${CLIFF_VERSION#v}
+          curl -sSL "https://github.com/orhun/git-cliff/releases/download/${CLIFF_VERSION}/git-cliff-${VERSION_NUM}-x86_64-unknown-linux-musl.tar.gz" -o git-cliff.tar.gz
+          tar -xzf git-cliff.tar.gz
+          sudo mv git-cliff-${VERSION_NUM}/git-cliff /usr/local/bin/
+          git-cliff --version
+
+      - name: Generate CHANGELOG.md
+        run: git-cliff --config cliff.toml --output CHANGELOG.md
+
+      - name: Commit and push CHANGELOG.md
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # 2. Explicitly checkout main to fix detached HEAD
-          git checkout main
-          
-          # 3. Stage the changelog
           git add CHANGELOG.md
-          
-          # 4. Commit ONLY if there are changes
-          if ! git diff --staged --quiet; then
-            git commit -m "docs: auto-update CHANGELOG for ${{ github.event.release.tag_name }}"
-            git push origin main
-          else
-            echo "No changes to commit in CHANGELOG.md"
-          fi
+          git commit -m "docs: auto-update CHANGELOG for ${{ github.ref_name }}" || echo "No changes to commit"
+          git push
