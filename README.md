@@ -349,7 +349,7 @@ pip install triples-sigfast[dev]
 pytest --cov=triples_sigfast
 ```
 
-**Test statistics (v1.4.0):** 321 tests, 95% coverage, tested on Ubuntu / macOS / Windows across Python 3.10, 3.11, 3.12.
+**Test statistics (v1.4.0):** 323 tests, 100% coverage, tested on Ubuntu / macOS / Windows across Python 3.10, 3.11, 3.12.
 
 ---
 
@@ -385,7 +385,7 @@ triples_sigfast/
 | v1.1.1 | ✅ Released | Core signal processing, 86 tests |
 | v1.2.0 | ✅ Released | Monte Carlo statistics, ROOT reader, SimReader |
 | v1.3.0 | ✅ Released | Nuclear physics — buildup factors, Watt spectrum, isotope database, ICRP 74 dose |
-| v1.4.0 | ✅ Released | Native FLUKA, MCNP, SERPENT readers — 321 tests, 95% coverage |
+| v1.4.0 | ✅ Released | Native FLUKA, MCNP, SERPENT readers — 323 tests, 100% coverage |
 | v1.5.0 | 🔄 In progress | Visualization engine — publication-quality plots, LaTeX/PDF/SVG export |
 | v1.6.0 | ⬜ Planned | CLI, auto-report generator, guided beginner mode |
 | v2.0.0 | ⬜ Planned | Community launch, academic paper submission |
