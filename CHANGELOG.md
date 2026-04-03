@@ -2,6 +2,15 @@
 
 All notable changes to triples-sigfast will be documented here.
 
+## [Unreleased]
+
+### Documentation
+
+- Auto-update CHANGELOG for main
+
+- Update test stats to 323 tests, 100% coverage
+
+
 ## [1.4.1] - 2026-04-03
 
 ### Bug Fixes
