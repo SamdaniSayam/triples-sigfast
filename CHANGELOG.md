@@ -6,11 +6,110 @@ All notable changes to triples-sigfast will be documented here.
 
 ### Bug Fixes
 
+- Correct setuptools build backend in pyproject.toml
+
+
+### CI/CD
+
+- Fix changelog workflow - replace Docker action with binary installer
+
+
+### Documentation
+
+- Rewrite README for v1.4.0 — all modules documented
+
+
+### Releases
+
+- Bump version to 1.4.0 for PyPI deployment
+
+- V1.4.0 - nuclear physics, MC stats, multi-code readers, 323 tests, 100% coverage
+
+
+## [1.4.0] - 2026-04-03
+
+### Features
+
+- Add native FlukaReader, MCNPReader, SerpentReader (v1.4.0)
+
+
+### Testing
+
+- Achieve 100% coverage — decay_mode, resonance_integral, GP fallback paths
+
+
+### style
+
+- Ruff format and lint fixes
+
+
+## [1.3.0] - 2026-04-03
+
+### CI/CD
+
+- Fix detached head in changelog workflow
+
+- Fix detached HEAD error in changelog workflow
+
+- Force git checkout main in changelog workflow to fix detached head
+
+
+### Features
+
+- Implemented watt spectrum, dose conversions, and isotope databases for v1.3.0
+
+
+### Releases
+
+- Bump version to 1.3.0 for PyPI deployment
+
+
+### style
+
+- Ruff format __init__.py
+
+- Fix import ordering (ruff I001)
+
+- Ruff format all files
+
+- Removed trailing whitespace in sources.py
+
+
+## [1.2.0] - 2026-04-02
+
+### Features
+
+- Add mc module — relative_error, figure_of_merit, is_converged, propagate_error
+
+- Add RootReader and SimReader with Geant4/FLUKA/MCNP/SERPENT support
+
+
+## [1.2.0-dev] - 2026-04-02
+
+### Refactoring
+
+- Restructure package into submodules (core, nuclear, io, stats, viz, detectors, plasma, cli)
+
+
+## [1.1.1] - 2026-04-02
+
+### Bug Fixes
+
 - Clean up setup.py, fix encoding, bump python_requires to 3.10
 
 - Add trailing newline to setup.py
 
 - Include requirements.txt in package build via MANIFEST.in
+
+
+### Documentation
+
+- Auto-update CHANGELOG for main
+
+
+### Releases
+
+- Bump version to 1.1.1
 
 
 ## [1.1.0] - 2026-04-02
