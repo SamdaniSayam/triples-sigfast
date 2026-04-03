@@ -11,14 +11,12 @@ jobs:
   changelog:
     runs-on: ubuntu-latest
     steps:
-      # 1. Force checkout of the 'main' branch specifically
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: main 
 
-      # 2. Generate the changelog
       - name: Generate Changelog
         uses: orhun/git-cliff-action@v3
         with:
@@ -27,11 +25,22 @@ jobs:
         env:
           OUTPUT: CHANGELOG.md
 
-      # 3. Explicitly push to origin main
       - name: Commit and Push
         run: |
+          # 1. Setup Bot Identity
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 2. Explicitly checkout main to fix detached HEAD
+          git checkout main
+          
+          # 3. Stage the changelog
           git add CHANGELOG.md
-          # Only commit if there are actually changes to the file
-          git diff --quiet && git diff --staged --quiet || (git commit -m "docs: auto-update CHANGELOG for ${{ github.event.release.tag_name }}" && git push origin main)
+          
+          # 4. Commit ONLY if there are changes
+          if ! git diff --staged --quiet; then
+            git commit -m "docs: auto-update CHANGELOG for ${{ github.event.release.tag_name }}"
+            git push origin main
+          else
+            echo "No changes to commit in CHANGELOG.md"
+          fi
