@@ -2,11 +2,21 @@
 
 All notable changes to triples-sigfast will be documented here.
 
-## [Unreleased]
+## [1.5.1] - 2026-04-05
 
 ### Bug Fixes
 
 - Changelog workflow detached HEAD - checkout main before push
+
+
+### Documentation
+
+- Auto-update CHANGELOG for main
+
+
+### Releases
+
+- Bump to 1.5.1 to re-trigger PyPI publish
 
 
 ## [1.5.0] - 2026-04-05
