@@ -25,6 +25,9 @@ jobs:
       - name: Install build tools
         run: pip install build twine
 
+      - name: Clean old build artifacts
+        run: rm -rf dist/ build/ *.egg-info/
+
       - name: Build the package
         run: python -m build
 

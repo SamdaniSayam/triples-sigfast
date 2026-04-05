@@ -10,7 +10,7 @@ with open("README.md", encoding="utf-8") as f:
 
 setup(
     name="triples-sigfast",
-    version="1.5.1",
+    version="1.5.2",
     author="TripleS Studio",
     description=(
         "An enterprise-grade, JIT-compiled time-series and nuclear physics "
