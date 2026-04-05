@@ -2,6 +2,20 @@
 
 All notable changes to triples-sigfast will be documented here.
 
+## [1.5.3] - 2026-04-05
+
+### Bug Fixes
+
+- Remove dist/ from git tracking and add to .gitignore
+
+- Sync version to 1.5.3 in both pyproject.toml and setup.py
+
+
+### Documentation
+
+- Auto-update CHANGELOG for v1.5.2
+
+
 ## [1.5.2] - 2026-04-05
 
 ### Bug Fixes
