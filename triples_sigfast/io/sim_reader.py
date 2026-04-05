@@ -114,7 +114,7 @@ class SimReader:
         counts : np.ndarray
         bin_centres : np.ndarray
         """
-        return self._backend.get_spectrum(key)
+        return self._backend.get_spectrum(key)  # type: ignore[arg-type]
 
     def get_tally(self, name: str) -> dict:
         """
@@ -123,7 +123,7 @@ class SimReader:
         Returns a dict with keys: 'values', 'errors', 'bins', 'name'.
         The exact content depends on the simulation code.
         """
-        return self._backend.get_tally(name)
+        return self._backend.get_tally(name)  # type: ignore[attr-defined]
 
     def summary(self) -> None:
         """Print a human-readable summary of available data in the file."""

@@ -4,9 +4,6 @@ source = triples_sigfast
 [report]
 exclude_lines =
     pragma: no cover
-    raise ImportError
-    raise NotImplementedError
-    raise ValueError.*No backend
-    def __exit__
-    if TYPE_CHECKING
     except ImportError
+    raise NotImplementedError
+    if TYPE_CHECKING
