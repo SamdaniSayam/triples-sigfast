@@ -2,6 +2,18 @@
 
 All notable changes to triples-sigfast will be documented here.
 
+## [1.5.2] - 2026-04-05
+
+### Bug Fixes
+
+- Clean dist artifacts before build + bump to 1.5.2
+
+
+### Documentation
+
+- Auto-update CHANGELOG for v1.5.1
+
+
 ## [1.5.1] - 2026-04-05
 
 ### Bug Fixes
