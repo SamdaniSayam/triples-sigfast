@@ -4,11 +4,25 @@ All notable changes to triples-sigfast will be documented here.
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- Changelog workflow detached HEAD - checkout main before push
+
+
+## [1.5.0] - 2026-04-05
+
 ### Documentation
 
 - Auto-update CHANGELOG for main
 
 - Update test stats to 323 tests, 100% coverage
+
+- Auto-update CHANGELOG for main
+
+
+### Features
+
+- V1.5.0 - PhysicsPlot visualization engine, 361 tests, 100% coverage
 
 
 ## [1.4.1] - 2026-04-03
