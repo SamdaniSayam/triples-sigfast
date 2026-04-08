@@ -5,3 +5,7 @@ __pycache__/
 dist/
 build/
 *.egg-info/
+.coverage
+plots/
+*.py~
+flex_benchmark.py
