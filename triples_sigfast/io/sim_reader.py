@@ -13,6 +13,9 @@ Supported formats
 .flair / .lis   -> FLUKA  (via FlukaReader)
 .mctal          -> MCNP   (via MCNPReader)
 .det / .m       -> SERPENT (via SerpentReader)
+.lhe            -> LHE    (via LHEReader — PYTHIA/MadGraph events)
+.hepmc          -> HepMC3 (via HepMCReader — PYTHIA/Herwig events)
+.hepmc3         -> HepMC3 (via HepMCReader)
 """
 
 from __future__ import annotations
@@ -30,6 +33,9 @@ _EXT_MAP: dict[str, str] = {
     ".mctal": "mcnp",
     ".det": "serpent",
     ".m": "serpent",
+    ".lhe": "lhe",
+    ".hepmc": "hepmc",
+    ".hepmc3": "hepmc",
 }
 
 
@@ -92,6 +98,14 @@ class SimReader:
             from triples_sigfast.io.serpent import SerpentReader
 
             return SerpentReader(filepath)
+        if fmt == "lhe":
+            from triples_sigfast.io.lhe import LHEReader
+
+            return LHEReader(filepath)
+        if fmt == "hepmc":
+            from triples_sigfast.io.hepmc import HepMCReader
+
+            return HepMCReader(filepath)
         raise ValueError(f"No backend for format: {fmt}")  # pragma: no cover
 
     # ── Unified API ───────────────────────────────────────────────────────

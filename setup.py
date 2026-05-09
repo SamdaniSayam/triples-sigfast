@@ -10,7 +10,7 @@ with open("README.md", encoding="utf-8") as f:
 
 setup(
     name="triples-sigfast",
-    version="1.6.0",
+    version="1.7.0",
     author="TripleS Studio",
     description=(
         "An enterprise-grade, JIT-compiled time-series and nuclear physics "
@@ -29,7 +29,6 @@ setup(
         "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        "Intended Audience :: Financial and Insurance Industry",
         "Intended Audience :: Science/Research",
     ],
     entry_points={

@@ -1,4 +1,6 @@
 # ── Core signal processing ───────────────────────────────────
+# ── High-Energy Physics subpackage (lazy — no JIT warmup at import) ──────────
+from . import hep as hep
 from .core.signal import attenuation as attenuation
 from .core.signal import attenuation_series as attenuation_series
 from .core.signal import detect_anomalies as detect_anomalies
@@ -9,5 +11,5 @@ from .core.signal import flux_to_dose as flux_to_dose
 from .core.signal import rolling_average as rolling_average
 from .core.signal import savitzky_golay as savitzky_golay
 
-__version__ = "1.6.0"
+__version__ = "1.7.0"
 from .cli.report import AutoReport as AutoReport

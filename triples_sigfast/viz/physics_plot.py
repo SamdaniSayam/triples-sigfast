@@ -226,17 +226,20 @@ _JOURNAL_STYLES: dict[str, dict] = {
 
 
 def _is_jupyter() -> bool:
-    """Detect if running inside a Jupyter notebook."""
+    """Detect if running inside a Jupyter notebook or JupyterLab kernel.
+
+    Only ZMQInteractiveShell indicates a true Jupyter kernel.
+    TerminalInteractiveShell is the plain `ipython` REPL and must NOT
+    trigger plotly interactive mode (it has no HTML renderer).
+    """
     try:  # pragma: no cover
         from IPython.core.getipython import get_ipython
 
         shell = get_ipython()
         if shell is None:
             return False
-        return shell.__class__.__name__ in (
-            "ZMQInteractiveShell",
-            "TerminalInteractiveShell",
-        )
+        # ZMQInteractiveShell = Jupyter notebook / JupyterLab / VS Code notebook
+        return shell.__class__.__name__ == "ZMQInteractiveShell"
     except ImportError:
         return False
 
@@ -421,12 +424,6 @@ class PhysicsPlot:
         -------
         Figure object (plotly Figure or matplotlib Figure).
         """
-        energies = np.asarray(energies)
-        counts = np.asarray(counts)
-        smoothed = np.asarray(smoothed) if smoothed is not None else None
-        peaks = np.asarray(peaks) if peaks is not None else None
-        errors = np.asarray(errors) if errors is not None else None
-
         energies = np.asarray(energies)
         counts = np.asarray(counts)
         smoothed = np.asarray(smoothed) if smoothed is not None else None

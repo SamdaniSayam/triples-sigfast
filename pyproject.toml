@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "triples-sigfast"
-version = "1.6.0"
-description = "An enterprise-grade, JIT-compiled time-series and nuclear physics analysis engine stress-tested on 100M+ row datasets."
+version = "1.7.0"
+description = "An enterprise-grade, JIT-compiled time-series, nuclear physics, and high-energy physics analysis engine stress-tested on 100M+ row datasets."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "TripleS Studio" }]
 requires-python = ">=3.10"
-keywords = ["nuclear physics", "simulation", "geant4", "fluka", "mcnp", "serpent", "numba", "jit", "physics"]
+keywords = ["nuclear physics", "simulation", "geant4", "fluka", "mcnp", "serpent", "numba", "jit", "physics", "hep", "high-energy physics", "lhc", "jet clustering", "anti-kt", "lhe", "hepmc", "pythia", "lorentz vector", "kinematics"]
 classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",

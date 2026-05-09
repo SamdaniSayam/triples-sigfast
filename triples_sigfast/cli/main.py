@@ -21,7 +21,6 @@ from pathlib import Path
 import click
 import numpy as np
 from rich.console import Console
-from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
@@ -29,24 +28,27 @@ console = Console()
 
 
 def _banner():  # pragma: no cover
-    console.print(
-        Panel.fit(
-            "[bold blue]⚡ triples-sigfast[/bold blue]\n"
-            "[dim]GIL-free physics simulation analysis[/dim]\n"
-            "[dim]pip install triples-sigfast[/dim]",
-            border_style="blue",
-        )
-    )
+    from triples_sigfast.cli.welcome import print_welcome
+
+    print_welcome(animated=False)
 
 
 # ── Root command group ────────────────────────────────────────────────────────
 
 
-@click.group()
+@click.group(invoke_without_command=True)
 @click.version_option(package_name="triples-sigfast")
-def cli():  # pragma: no cover
-    """triples-sigfast — GIL-free physics simulation analysis engine."""
-    pass
+@click.pass_context
+def cli(ctx):  # pragma: no cover
+    """triples-sigfast — GIL-free physics simulation analysis engine.
+
+    Run without a subcommand to see the welcome page.
+    Run 'sigfast --help' to list all commands.
+    """
+    if ctx.invoked_subcommand is None:
+        from triples_sigfast.cli.welcome import print_welcome
+
+        print_welcome(animated=True)
 
 
 # ── sigfast info ──────────────────────────────────────────────────────────────
@@ -100,6 +102,29 @@ def info():  # pragma: no cover
     ]:
         standards.add_row(mod, std)
     console.print(standards)
+
+
+# ── sigfast welcome ───────────────────────────────────────────────────────────
+
+
+@cli.command()
+def welcome():  # pragma: no cover
+    """
+    Show the triples-sigfast welcome page.
+
+    Displays the full ASCII logo, feature overview, performance metrics,
+    quick-start commands, and a random physics quote.
+
+    \b
+    This is also shown automatically when you run `sigfast` with no arguments.
+
+    \b
+    Example:
+        sigfast welcome
+    """
+    from triples_sigfast.cli.welcome import print_welcome
+
+    print_welcome(animated=True)
 
 
 # ── sigfast analyze ───────────────────────────────────────────────────────────

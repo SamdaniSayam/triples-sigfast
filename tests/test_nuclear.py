@@ -225,8 +225,7 @@ class TestWattSpectrum:
     def test_normalised_integrates_to_one(self):
         E = np.linspace(0.001, 20, 5000)
         N = watt_spectrum(E, "Cf-252", normalise=True)
-        de = np.gradient(E)
-        integral = np.sum(N * de)
+        integral = np.trapezoid(N, E)
         assert abs(integral - 1.0) < 0.05
 
     def test_all_values_non_negative(self):
@@ -289,8 +288,7 @@ class TestMaxwellSpectrum:
     def test_normalised_integrates_to_one(self):
         E = np.linspace(1e-8, 0.1, 10000)
         N = maxwell_spectrum(E, temperature_mev=2.53e-8, normalise=True)
-        de = np.gradient(E)
-        integral = np.sum(N * de)
+        integral = np.trapezoid(N, E)
         assert abs(integral - 1.0) < 0.05
 
     def test_all_values_non_negative(self):
@@ -616,8 +614,7 @@ class TestNuclearIntegration:
         """
         E = np.linspace(0.001, 20, 10000)
         N = watt_spectrum(E, "Cf-252", normalise=False)
-        de = np.gradient(E)
-        E_mean_numerical = np.sum(E * N * de) / np.sum(N * de)
+        E_mean_numerical = np.trapezoid(E * N, E) / np.trapezoid(N, E)
         E_mean_analytical = watt_mean_energy("Cf-252")
         assert abs(E_mean_numerical - E_mean_analytical) / E_mean_analytical < 0.10
 

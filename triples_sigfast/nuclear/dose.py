@@ -78,14 +78,36 @@ _NEUTRON_H_PHI: dict[float, float] = {
 # Unit conversion: pSv/s → µSv/hr
 _PSV_S_TO_USV_HR = 3.6e-3
 
+# ── Pre-computed log-log interpolation arrays (computed once at module load) ─────────
+# Sorting and np.log() are constant-time operations on fixed-size tables.
+# Pre-computing here eliminates redundant work on every flux_to_dose /
+# point_source / dose_rate_vs_distance call.
+_PHOTON_E_SORTED = np.array(sorted(_PHOTON_H_PHI.keys()), dtype=np.float64)
+_PHOTON_H_SORTED = np.array(
+    [_PHOTON_H_PHI[e] for e in _PHOTON_E_SORTED], dtype=np.float64
+)
+_LOG_PHOTON_E = np.log(_PHOTON_E_SORTED)
+_LOG_PHOTON_H = np.log(_PHOTON_H_SORTED)
+
+_NEUTRON_E_SORTED = np.array(sorted(_NEUTRON_H_PHI.keys()), dtype=np.float64)
+_NEUTRON_H_SORTED = np.array(
+    [_NEUTRON_H_PHI[e] for e in _NEUTRON_E_SORTED], dtype=np.float64
+)
+_LOG_NEUTRON_E = np.log(_NEUTRON_E_SORTED)
+_LOG_NEUTRON_H = np.log(_NEUTRON_H_SORTED)
+
 
 def _interpolate_h_phi(energy_mev: float, table: dict) -> float:
-    """Log-log interpolate h_phi from ICRP 74 table."""
-    energies = np.array(sorted(table.keys()))
-    h_values = np.array([table[e] for e in energies])
-    log_e = np.log(energies)
-    log_h = np.log(h_values)
-    return float(np.exp(np.interp(np.log(energy_mev), log_e, log_h)))
+    """Log-log interpolate h_phi from ICRP 74 table.
+
+    Uses pre-computed sorted arrays and log-tables to avoid repeated
+    allocation and np.log() calls on every invocation.
+    """
+    if table is _PHOTON_H_PHI:
+        log_e_arr, log_h_arr = _LOG_PHOTON_E, _LOG_PHOTON_H
+    else:
+        log_e_arr, log_h_arr = _LOG_NEUTRON_E, _LOG_NEUTRON_H
+    return float(np.exp(np.interp(np.log(energy_mev), log_e_arr, log_h_arr)))
 
 
 def point_source(
@@ -263,12 +285,17 @@ def dose_rate_vs_distance(
     >>> distances = np.linspace(10, 500, 200)
     >>> rates = dose_rate_vs_distance(1e9, 1.25, distances)
     """
-    return np.array(
-        [
-            point_source(activity_bq, energy_mev, d, particle, photons_per_decay)
-            for d in distances_cm
-        ]
-    )
+    if particle not in ("gamma", "neutron"):
+        raise ValueError(f"particle must be 'gamma' or 'neutron', got '{particle}'")
+
+    table = _PHOTON_H_PHI if particle == "gamma" else _NEUTRON_H_PHI
+    # h_phi depends only on energy — compute once, not once per distance
+    h_phi = _interpolate_h_phi(energy_mev, table)
+
+    distances_cm = np.asarray(distances_cm, dtype=np.float64)
+    # Vectorized 1/r² law applied to the whole array in a single NumPy operation
+    fluence_rates = (activity_bq * photons_per_decay) / (4.0 * np.pi * distances_cm**2)
+    return fluence_rates * h_phi * _PSV_S_TO_USV_HR
 
 
 def inverse_square_distance(

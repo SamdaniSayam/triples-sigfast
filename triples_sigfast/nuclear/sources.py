@@ -31,14 +31,10 @@ _WATT_PARAMS: dict[str, tuple[float, float]] = {
     "Th-232": (1.0000, 2.6460),
 }
 
-# ── Maxwell spectrum parameters kT [MeV] for reactor moderators ──────────────
-_MAXWELL_KT: dict[str, float] = {
-    "thermal_293K": 0.02526e-3 * 1000 / 1000,  # 0.0253 eV → MeV
-    "thermal_300K": 0.02585e-3,
-    "hot_600K": 0.05170e-3,
-    "epithermal": 0.100,
-    "fast": 1.000,
-}
+# ── Common moderator temperatures as kT [MeV] (for reference / future use) ───
+# Room temperature (293 K): kT = 0.02526 eV = 2.526e-5 MeV
+# Hot moderator  (600 K):   kT = 0.05170 eV = 5.170e-5 MeV
+# Pass these values directly to maxwell_spectrum(temperature_mev=...)
 
 
 def watt_spectrum(
@@ -104,8 +100,8 @@ def watt_spectrum(
     flux = np.where(E > 0, calculation, 0.0)
 
     if normalise and flux.sum() > 0:
-        de = np.gradient(E)
-        total = np.sum(flux * de)
+        # np.trapezoid is the correct trapezoidal rule; np.gradient had boundary errors
+        total = np.trapezoid(flux, E)
         if total > 0:
             flux = flux / total
 
@@ -151,8 +147,8 @@ def maxwell_spectrum(
     flux = np.where(E > 0, np.sqrt(E) * np.exp(-E / kT), 0.0)
 
     if normalise and flux.sum() > 0:
-        de = np.gradient(E)
-        total = np.sum(flux * de)
+        # np.trapezoid is the correct trapezoidal rule; np.gradient had boundary errors
+        total = np.trapezoid(flux, E)
         if total > 0:
             flux = flux / total
 

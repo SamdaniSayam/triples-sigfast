@@ -16,6 +16,8 @@ References
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 import numpy as np
 
 # ── NIST mass attenuation coefficients mu/rho [cm^2/g] at common energies ─────
@@ -136,11 +138,14 @@ _GP_COEFFS: dict[str, dict] = {
 }
 
 
+@lru_cache(maxsize=128)
 def _get_mu(material: str, energy_mev: float) -> float:
     """
     Interpolate linear attenuation coefficient mu [cm^-1] for a material.
 
     Uses log-log interpolation between NIST XCOM tabulated values.
+    Result is cached by (material, energy_mev) so repeated calls during
+    attenuation_series sweeps add zero overhead after the first call.
     """
     mat = material.lower()
     if mat not in _MATERIALS:

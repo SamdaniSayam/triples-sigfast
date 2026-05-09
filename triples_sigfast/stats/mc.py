@@ -120,18 +120,13 @@ def figure_of_merit(
         Relative error array, typically from `relative_error()`.
     cpu_time : float
         Total CPU time in seconds for the simulation run.
-        Must be > 0.
 
     Returns
     -------
     np.ndarray
         FOM values per bin. Higher is better. Returns 0.0 for bins
-        where R is zero or infinite (undefined).
-
-    Raises
-    ------
-    ValueError
-        If cpu_time <= 0.
+        where R is zero, infinite, or NaN (undefined), and for all bins
+        when cpu_time <= 0 (undefined / not yet run).
 
     Examples
     --------
@@ -142,9 +137,15 @@ def figure_of_merit(
     n = rel_error.shape[0]
     result = np.empty(n, dtype=np.float64)
 
+    # Guard: undefined FOM when no CPU time has elapsed — check once, not per bin
+    if cpu_time <= 0.0:
+        for i in range(n):
+            result[i] = 0.0
+        return result
+
     for i in range(n):
         r = rel_error[i]
-        if r <= 0.0 or np.isinf(r) or np.isnan(r) or cpu_time <= 0.0:
+        if r <= 0.0 or np.isinf(r) or np.isnan(r):
             result[i] = 0.0
         else:
             result[i] = 1.0 / (r * r * cpu_time)

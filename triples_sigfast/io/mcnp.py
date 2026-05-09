@@ -213,15 +213,6 @@ class MCNPReader:
             )
         return self._tallies[matches[0]]
 
-    def get_mesh_tally(self, identifier: int | str) -> dict:
-        """
-        Retrieve a mesh tally (FMESH) by number.
-
-        For standard MCTAL files, delegates to get_tally().
-        Full FMESH support requires the meshtal file format.
-        """
-        return self.get_tally(identifier)
-
     def get_spectrum(self, name: str | None = None) -> tuple[np.ndarray, np.ndarray]:
         """
         Extract (values, bins) from a tally.
@@ -252,19 +243,33 @@ class MCNPReader:
         Returns FOM values from the first tally that has TFC data,
         or an empty array if no TFC data is available.
 
+        TFC format (MCNP6 standard): each entry is 4 values —
+        nps, mean, relative_error, fom.
+
         Returns
         -------
         np.ndarray
             FOM values. Shape: (N,) where N is the number of TFC entries.
+
+        Raises
+        ------
+        RuntimeError
+            If TFC data is present but has a non-multiple-of-4 length,
+            indicating a truncated or corrupted MCTAL file.
         """
         for t in self._tallies.values():
             tfc = t.get("tfc", np.array([]))
-            if len(tfc) > 0:
-                # TFC format: nps  mean  error  fom (groups of 4)
-                if len(tfc) % 4 == 0:
-                    arr = tfc.reshape(-1, 4)
-                    return arr[:, 3]  # FOM column
-                return tfc  # pragma: no cover
+            if len(tfc) == 0:
+                continue
+            # TFC format: nps  mean  rel_error  fom  (groups of 4)
+            if len(tfc) % 4 != 0:
+                raise RuntimeError(
+                    f"Malformed TFC block in tally '{t['key']}': "
+                    f"expected a multiple of 4 values (nps/mean/error/fom), "
+                    f"got {len(tfc)}. The MCTAL file may be truncated or corrupted."
+                )
+            arr = tfc.reshape(-1, 4)
+            return arr[:, 3]  # FOM column (index 3)
         return np.array([], dtype=np.float64)
 
     def keys(self) -> list[str]:

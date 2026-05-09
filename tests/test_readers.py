@@ -373,11 +373,6 @@ class TestMCNPReader:
         with pytest.raises(RuntimeError):
             r.get_spectrum()
 
-    def test_get_mesh_tally(self, mctal_file):
-        r = MCNPReader(mctal_file)
-        t = r.get_mesh_tally(4)
-        assert "values" in t
-
     def test_get_fom_returns_array(self, mctal_file):
         r = MCNPReader(mctal_file)
         fom = r.get_fom()
