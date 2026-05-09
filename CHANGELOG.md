@@ -4,31 +4,31 @@ All notable changes to triples-sigfast will be documented here.
 
 ## [1.7.0] - 2026-05-09
 
+### Bug Fixes
+
+- Expose AutoReport from top-level __init__.py
+
+- Add .coverage, plots/, flex_benchmark.py to .gitignore
+
+- Pin macos-13 Intel architecture and bust pip cache
+
+
+### Documentation
+
+- Auto-update CHANGELOG for v1.6.0
+
+- Add JOSS paper (paper.md and paper.bib)
+
+- Add JOSS paper (paper.md and paper.bib)
+
+- Add LICENSE file, move paper to root, add missing JOSS sections
+
+- Add LICENSE file, move paper to root, add missing JOSS sections
+
+
 ### Features
 
-- **Phase 1 — High-Energy File Readers**: Add `LHEReader` and `HepMCReader` to
-  `triples_sigfast.io`. Both use block-memory parsing (one `f.read()` I/O call +
-  C-speed `str.split()`) delivering ~15× speedup over readline loops on 2 GB
-  PYTHIA event files.
-- **Phase 2 — Lorentz Vector Kinematics**: New `triples_sigfast.hep.kinematics`
-  module with 6 `@njit(parallel=True)` functions: `calculate_invariant_mass`,
-  `calculate_pseudorapidity`, `delta_r_matching`, `transverse_momentum`,
-  `azimuthal_angle`, `rapidity`.
-- **Phase 3 — Anti-kT Jet Clustering**: New `triples_sigfast.hep.jets` module
-  with Numba-compiled `cluster_jets()` and `Jet` dataclass. Implements the CERN
-  standard anti-kT algorithm (Cacciari, Salam, Soyez 2008) — a Python-native
-  alternative to the C++ FastJet library.
-- `SimReader` auto-detection extended: `.lhe` → `LHEReader`, `.hepmc` /
-  `.hepmc3` → `HepMCReader`.
-- `triples_sigfast.hep` accessible as a top-level namespace.
-
-### Testing
-
-- Added 86 new physics-validated tests across 3 new test files:
-  `test_hep_io.py`, `test_hep_kinematics.py`, `test_hep_jets.py`.
-- Z-boson mass reconstruction (90 GeV), ΔR π-wrapping, 4-momentum conservation,
-  and anti-kT R-parameter scaling all verified.
-- Total suite: **470 tests, 0 failures**.
+- Release v1.7.0 - Native LHE/HepMC parsers and Anti-kT JIT clustering
 
 
 ## [1.6.0] - 2026-04-06
