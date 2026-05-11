@@ -1,6 +1,6 @@
 """
 triples_sigfast.hep.kinematics
-───────────────────────────────
+-------------------------------
 JIT-compiled Lorentz 4-vector mathematics for high-energy physics analysis.
 
 All functions accept NumPy float64 arrays and operate on millions of
@@ -73,9 +73,9 @@ def _kernel_pseudorapidity(
         # Clamp to avoid divide-by-zero at pz = ±p (beam direction)
         denom = p - pzi
         if denom <= 0.0:
-            result[i] = 1e10  # forward beam direction → η → +∞
+            result[i] = 1e10  # forward beam direction -> η -> +∞
         elif p + pzi <= 0.0:
-            result[i] = -1e10  # backward beam direction → η → -∞
+            result[i] = -1e10  # backward beam direction -> η -> -∞
         else:
             result[i] = 0.5 * math.log((p + pzi) / denom)
     return result
@@ -166,7 +166,7 @@ def calculate_invariant_mass(p1: np.ndarray, p2: np.ndarray) -> np.ndarray:
     >>> mu1 = np.array([[45.0, 0.0,  44.9, 1.0]])   # [E, px, py, pz]
     >>> mu2 = np.array([[45.0, 0.0, -44.9, -1.0]])
     >>> M = calculate_invariant_mass(mu1, mu2)
-    >>> print(f"M = {M[0]:.2f} GeV")   # → ~90 GeV (Z mass)
+    >>> print(f"M = {M[0]:.2f} GeV")   # -> ~90 GeV (Z mass)
 
     References
     ----------
@@ -192,7 +192,7 @@ def calculate_pseudorapidity(pz: np.ndarray, p_tot: np.ndarray) -> np.ndarray:
     """
     Compute pseudorapidity η for every particle at C-speed.
 
-    Formula:  η = 0.5 · ln((|p|+pz) / (|p|-pz)) = -ln(tan(θ/2))
+    Formula:  η = 0.5 . ln((|p|+pz) / (|p|-pz)) = -ln(tan(θ/2))
 
     Pseudorapidity is the dominant coordinate in collider detectors.
     It is approximately equal to rapidity y for massless particles.
@@ -311,7 +311,7 @@ def azimuthal_angle(px: np.ndarray, py: np.ndarray) -> np.ndarray:
 
 def rapidity(E: np.ndarray, pz: np.ndarray) -> np.ndarray:
     """
-    Compute rapidity y = 0.5 · ln((E+pz)/(E-pz)).
+    Compute rapidity y = 0.5 . ln((E+pz)/(E-pz)).
 
     Unlike pseudorapidity, rapidity is exactly Lorentz-invariant under
     longitudinal boosts. For massless particles, y ≡ η.

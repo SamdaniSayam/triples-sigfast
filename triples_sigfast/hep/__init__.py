@@ -1,6 +1,6 @@
 """
 triples_sigfast.hep
-────────────────────
+--------------------
 High-Energy Physics (HEP) analysis toolkit for triples-sigfast.
 
 Modules

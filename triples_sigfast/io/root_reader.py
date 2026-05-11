@@ -1,6 +1,6 @@
 """
 triples_sigfast.io.root_reader
-──────────────────────────────
+------------------------------
 Smart ROOT file reader for Geant4 simulation output.
 
 Wraps uproot with a physicist-friendly API: auto-discovery of histograms,
@@ -45,7 +45,7 @@ class RootReader:
         self._file = uproot.open(filepath)
         self._keys: list[str] = self._file.keys()
 
-    # ── Discovery ─────────────────────────────────────────────────────────
+    # -- Discovery ---------------------------------------------------------
 
     def keys(self) -> list[str]:
         """Return all object keys in the ROOT file."""
@@ -73,9 +73,9 @@ class RootReader:
         """
         hist_types = ("TH1F", "TH1D", "TH1I", "TH2F", "TH2D")
         print(f"\nROOT file: {self.filepath}")
-        print(f"{'─' * 60}")
+        print(f"{'-' * 60}")
         print(f"  {'Key':<30} {'Type':<12} {'Bins / Info'}")
-        print(f"{'─' * 60}")
+        print(f"{'-' * 60}")
         for key in self._keys:
             try:
                 obj = self._file[key]
@@ -88,9 +88,9 @@ class RootReader:
                 print(f"  {key:<30} {cls:<12} {info}")
             except Exception as exc:  # pragma: no cover
                 print(f"  {key:<30} {'(error)':<12} {exc}")  # pragma: no cover
-        print(f"{'─' * 60}\n")
+        print(f"{'-' * 60}\n")
 
-    # ── Extraction ─────────────────────────────────────────────────────────
+    # -- Extraction ---------------------------------------------------------
 
     def get_spectrum(
         self,
@@ -159,7 +159,7 @@ class RootReader:
 
         Returns
         -------
-        dict mapping key → (counts, bin_centres)
+        dict mapping key -> (counts, bin_centres)
         """
         th1_types = ("TH1F", "TH1D", "TH1I")
         result = {}
@@ -177,7 +177,7 @@ class RootReader:
                 continue  # pragma: no cover
         return result
 
-    # ── Export ─────────────────────────────────────────────────────────────
+    # -- Export -------------------------------------------------------------
 
     def export_csv(self, output_path: str) -> None:
         """
@@ -204,7 +204,7 @@ class RootReader:
 
         df = pd.DataFrame(frames)
         df.to_csv(output_path, index=False)
-        print(f"Exported {len(spectra)} histogram(s) → {output_path}")
+        print(f"Exported {len(spectra)} histogram(s) -> {output_path}")
 
     def export_hdf5(self, output_path: str) -> None:
         """
@@ -236,9 +236,9 @@ class RootReader:
                 grp.create_dataset("counts", data=counts)
                 grp.create_dataset("energies", data=energies)
 
-        print(f"Exported {len(spectra)} histogram(s) → {output_path}")
+        print(f"Exported {len(spectra)} histogram(s) -> {output_path}")
 
-    # ── Internal ───────────────────────────────────────────────────────────
+    # -- Internal -----------------------------------------------------------
 
     def _resolve_key(self, key) -> str:
         """Resolve exact or partial key match. Raises KeyError if not found."""

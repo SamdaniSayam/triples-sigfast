@@ -1,6 +1,6 @@
 """
 triples_sigfast.stats.mc
-────────────────────────
+------------------------
 Monte Carlo statistical analysis functions for simulation-based physics research.
 
 All functions are Numba JIT-compiled for C-level performance on large datasets
@@ -18,7 +18,7 @@ from __future__ import annotations
 import numpy as np
 from numba import njit, prange
 
-# ── 1. Relative Error ────────────────────────────────────────────────────────
+# -- 1. Relative Error --------------------------------------------------------
 
 
 @njit(parallel=True, cache=True)  # pragma: no cover
@@ -98,7 +98,7 @@ def mean_relative_error(counts: np.ndarray) -> float:
     return total / valid
 
 
-# ── 2. Figure of Merit ───────────────────────────────────────────────────────
+# -- 2. Figure of Merit -------------------------------------------------------
 
 
 @njit(cache=True)  # pragma: no cover
@@ -153,7 +153,7 @@ def figure_of_merit(
     return result
 
 
-# ── 3. Convergence Check ─────────────────────────────────────────────────────
+# -- 3. Convergence Check -----------------------------------------------------
 
 
 @njit(parallel=True, cache=True)  # pragma: no cover
@@ -201,7 +201,7 @@ def is_converged(
     return result
 
 
-# ── 4. Uncertainty Propagation ───────────────────────────────────────────────
+# -- 4. Uncertainty Propagation -----------------------------------------------
 
 
 @njit(parallel=True, cache=True)  # pragma: no cover
@@ -259,7 +259,7 @@ def propagate_error(
 
         # Quadrature propagation (GUM eq. 13)
         # σ_total² = (∂f/∂N)² σ_N² + (∂f/∂ε)² σ_ε²
-        # f = N/ε  →  ∂f/∂N = 1/ε,  ∂f/∂ε = -N/ε²
+        # f = N/ε  ->  ∂f/∂N = 1/ε,  ∂f/∂ε = -N/ε²
         term_counts = (sigma_N / eff) ** 2
         term_eff = ((N / (eff * eff)) * sigma_eff) ** 2
 

@@ -1,6 +1,6 @@
 """
 triples_sigfast.io.serpent
-───────────────────────────
+---------------------------
 Native SERPENT2 detector output reader.
 
 Parses MATLAB-compatible (.m) and detector (.det) output files produced
@@ -53,7 +53,7 @@ class SerpentReader:
         self._scalars: dict[str, np.ndarray] = {}
         self._parse()
 
-    # ── Parsing ───────────────────────────────────────────────────────────
+    # -- Parsing -----------------------------------------------------------
 
     def _parse(self) -> None:
         with open(self.filepath) as f:
@@ -118,7 +118,7 @@ class SerpentReader:
                     "errors": mat[:, 11],
                 }
 
-    # ── Public API ────────────────────────────────────────────────────────
+    # -- Public API --------------------------------------------------------
 
     def get_detector(self, name: str | None = None) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -245,7 +245,7 @@ class SerpentReader:
     def __len__(self) -> int:
         return len(self._detectors)
 
-    # ── Internal ──────────────────────────────────────────────────────────
+    # -- Internal ----------------------------------------------------------
 
     def _get_detector(self, name: str) -> dict:
         if name in self._detectors:

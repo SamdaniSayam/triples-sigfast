@@ -1,6 +1,6 @@
 """
 triples_sigfast.nuclear.isotope
-────────────────────────────────
+--------------------------------
 Isotope database with decay, activity, and neutron cross-section data.
 
 Provides a unified interface to nuclear data for isotopes commonly used
@@ -17,12 +17,12 @@ from __future__ import annotations
 
 import numpy as np
 
-# ── Nuclear constants ─────────────────────────────────────────────────────────
+# -- Nuclear constants ---------------------------------------------------------
 _AVOGADRO = 6.02214076e23  # mol⁻¹
 _LN2 = np.log(2)
 _SEC_PER_YEAR = 3.15576e7  # seconds per year
 
-# ── Isotope database ──────────────────────────────────────────────────────────
+# -- Isotope database ----------------------------------------------------------
 # Each entry: {
 #   "Z": atomic number,
 #   "A": mass number,
@@ -198,7 +198,7 @@ class Isotope:
 
     @staticmethod
     def _resolve_name(name: str) -> str:
-        """Normalise name: 'cf-252' → 'Cf-252'."""
+        """Normalise name: 'cf-252' -> 'Cf-252'."""
         name = name.strip()
         if name in _ISOTOPE_DB:
             return name
@@ -211,7 +211,7 @@ class Isotope:
             f"Available: {list(_ISOTOPE_DB.keys())}"
         )
 
-    # ── Properties ────────────────────────────────────────────────────────
+    # -- Properties --------------------------------------------------------
 
     @property
     def Z(self) -> int:
@@ -274,7 +274,7 @@ class Isotope:
         """Primary gamma emission energies in MeV."""
         return self._data["gamma_energies_mev"]
 
-    # ── Methods ───────────────────────────────────────────────────────────
+    # -- Methods -----------------------------------------------------------
 
     def activity(self, mass_g: float) -> float:
         """

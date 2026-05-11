@@ -1,6 +1,6 @@
 """
 triples_sigfast.nuclear.dose
-─────────────────────────────
+-----------------------------
 Point source dose rate calculations.
 
 Implements gamma-ray and neutron dose rate calculations for unshielded
@@ -20,9 +20,9 @@ import numpy as np
 
 from triples_sigfast.nuclear.shielding import attenuation_with_buildup
 
-# ── ICRP 74 flux-to-dose coefficients h_phi [pSv·cm²] ───────────────────────
-# Converts photon/neutron fluence rate [cm⁻²·s⁻¹] to ambient dose H*(10)
-# Photon energies: MeV; values: pSv·cm²
+# -- ICRP 74 flux-to-dose coefficients h_phi [pSv.cm²] -----------------------
+# Converts photon/neutron fluence rate [cm⁻².s⁻¹] to ambient dose H*(10)
+# Photon energies: MeV; values: pSv.cm²
 # Source: ICRP Publication 74, Table A.1
 
 _PHOTON_H_PHI: dict[float, float] = {
@@ -53,7 +53,7 @@ _PHOTON_H_PHI: dict[float, float] = {
     10.00: 2.0000,
 }
 
-# Neutron h_phi [pSv·cm²] — ICRP 74 Table A.41
+# Neutron h_phi [pSv.cm²] — ICRP 74 Table A.41
 _NEUTRON_H_PHI: dict[float, float] = {
     1.0e-9: 2.69e-3,
     1.0e-8: 4.36e-3,
@@ -75,10 +75,10 @@ _NEUTRON_H_PHI: dict[float, float] = {
     20.00: 8.24e-1,
 }
 
-# Unit conversion: pSv/s → µSv/hr
+# Unit conversion: pSv/s -> µSv/hr
 _PSV_S_TO_USV_HR = 3.6e-3
 
-# ── Pre-computed log-log interpolation arrays (computed once at module load) ─────────
+# -- Pre-computed log-log interpolation arrays (computed once at module load) ---------
 # Sorting and np.log() are constant-time operations on fixed-size tables.
 # Pre-computing here eliminates redundant work on every flux_to_dose /
 # point_source / dose_rate_vs_distance call.
@@ -172,10 +172,10 @@ def point_source(
     table = _PHOTON_H_PHI if particle == "gamma" else _NEUTRON_H_PHI
     h_phi = _interpolate_h_phi(energy_mev, table)
 
-    # Fluence rate at distance r [cm⁻²·s⁻¹]
+    # Fluence rate at distance r [cm⁻².s⁻¹]
     fluence_rate = (activity_bq * photons_per_decay) / (4.0 * np.pi * distance_cm**2)
 
-    # Dose rate [pSv/s] → [µSv/hr]
+    # Dose rate [pSv/s] -> [µSv/hr]
     dose_pSv_s = fluence_rate * h_phi
     return float(dose_pSv_s * _PSV_S_TO_USV_HR)
 

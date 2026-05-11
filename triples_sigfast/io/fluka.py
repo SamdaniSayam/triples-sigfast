@@ -1,6 +1,6 @@
 """
 triples_sigfast.io.fluka
-────────────────────────
+------------------------
 Native FLUKA simulation output reader.
 
 Parses USRBIN, USRBDX, and USRTRACK ASCII output produced by FLUKA
@@ -49,7 +49,7 @@ class FlukaReader:
         self._detectors: dict[str, dict] = {}
         self._parse()
 
-    # ── Parsing ───────────────────────────────────────────────────────────
+    # -- Parsing -----------------------------------------------------------
 
     def _parse(self) -> None:
         """Parse all detector blocks from the FLUKA output file."""
@@ -124,7 +124,7 @@ class FlukaReader:
 
         _flush()
 
-    # ── Public API ────────────────────────────────────────────────────────
+    # -- Public API --------------------------------------------------------
 
     def get_usrbin(self, name: str) -> dict:
         """
@@ -199,7 +199,7 @@ class FlukaReader:
             )
         print()
 
-    # ── Internal ──────────────────────────────────────────────────────────
+    # -- Internal ----------------------------------------------------------
 
     def _get_detector(self, name: str) -> dict:
         if name in self._detectors:
