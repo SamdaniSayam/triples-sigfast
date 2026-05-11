@@ -59,7 +59,7 @@ array operations. However, no existing library simultaneously provides:
 data analysis layer that bridges simulation output and publication-ready
 results.
 
-# State of the Field
+# State of the field
 
 Several Python libraries address parts of the simulation data analysis
 problem. `uproot` [@uproot] reads ROOT files but provides no analysis
@@ -74,7 +74,7 @@ nuclear physics calculations, multi-code simulation readers, and a
 command-line interface accessible to researchers without programming
 experience. `triples-sigfast` fills this gap.
 
-# Software Design
+# Software design
 
 `triples-sigfast` is architected as a layered submodule system. The
 core layer (`triples_sigfast.core`) provides GIL-free signal processing
@@ -89,7 +89,7 @@ format-specific backends, enabling researchers to switch simulation codes
 without modifying analysis code. All domain calculations are traceable to
 published international standards with explicit citations in docstrings.
 
-# Research Impact
+# Research impact statement
 
 `triples-sigfast` directly enables reproducible simulation-based physics
 research by codifying standards-compliant calculations that researchers
@@ -102,7 +102,7 @@ the barrier to entry for graduate students and junior researchers who need
 to analyze Monte Carlo output but lack programming experience, directly
 supporting the training of the next generation of computational physicists.
 
-# AI Usage Disclosure
+# AI usage disclosure
 
 The author used Claude (Anthropic) as a coding assistant during development
 of this library. All scientific content, physics formulas, standard
