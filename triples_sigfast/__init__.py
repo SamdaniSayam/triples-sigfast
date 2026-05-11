@@ -27,7 +27,7 @@ plasma    -- Plasma physics models (planned v2.0)
 # Package version string.
 # Must be kept in sync with pyproject.toml and setup.py.
 # ---------------------------------------------------------------------------
-__version__ = "1.8.0"
+__version__ = "1.8.1"
 
 # ---------------------------------------------------------------------------
 # Core signal processing.

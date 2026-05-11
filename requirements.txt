@@ -8,3 +8,4 @@ plotly
 click
 rich
 reportlab
+plotext

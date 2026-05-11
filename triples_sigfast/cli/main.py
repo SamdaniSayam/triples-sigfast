@@ -176,7 +176,13 @@ def welcome():  # pragma: no cover
 @click.option(
     "--output", default=None, help="Save spectrum plot to this file (PDF/PNG/SVG)."
 )
-def analyze(file, key, window, polyorder, threshold, output):  # pragma: no cover
+@click.option(
+    "--term-plot/--no-term-plot",
+    default=True,
+    show_default=True,
+    help="Render spectrum plot directly in the terminal.",
+)
+def analyze(file, key, window, polyorder, threshold, output, term_plot):  # pragma: no cover
     """Analyze a simulation output file or raw data file.
 
     Reads the file, validates Monte Carlo convergence, smooths the energy
@@ -259,6 +265,25 @@ def analyze(file, key, window, polyorder, threshold, output):  # pragma: no cove
         progress.update(task, description="Done.", completed=True)
 
     # ---------- Step 4: Display results ----------
+    if term_plot:
+        import plotext as plt
+
+        plt.clf()
+        plt.theme("clear")
+        plt.scatter(energies, counts, label="Raw counts", marker="dot", color="blue")
+        plt.plot(energies, smoothed, label="Smoothed", color="red")
+        if len(peaks) > 0:
+            peak_energies = energies[peaks]
+            peak_counts = smoothed[peaks]
+            plt.scatter(
+                peak_energies, peak_counts, marker="x", color="yellow", label="Peaks"
+            )
+        plt.title(f"Energy Spectrum -- {Path(file).name}")
+        plt.xlabel("Energy (MeV)")
+        plt.ylabel("Counts")
+        plt.show()
+        console.print()
+
     result_table = Table(
         title=f"Analysis: {file}",
         show_header=True,
@@ -323,7 +348,13 @@ def analyze(file, key, window, polyorder, threshold, output):  # pragma: no cove
     show_default=True,
     help="Output plot filename.",
 )
-def compare(files, labels, energy, output):  # pragma: no cover
+@click.option(
+    "--term-plot/--no-term-plot",
+    default=True,
+    show_default=True,
+    help="Render overlay plot directly in the terminal.",
+)
+def compare(files, labels, energy, output, term_plot):  # pragma: no cover
     """Compare multiple simulation output files on a single overlay plot.
 
     Applies Savitzky-Golay smoothing to every spectrum, ranks materials by
@@ -385,6 +416,19 @@ def compare(files, labels, energy, output):  # pragma: no cover
             )
 
     # ---------- Rank and display ----------
+    if term_plot:
+        import plotext as plt
+
+        plt.clf()
+        plt.theme("clear")
+        for r in results:
+            plt.plot(r["energies"], r["smoothed"], label=r["label"])
+        plt.title("Shielding Material Comparison")
+        plt.xlabel("Energy (MeV)")
+        plt.ylabel("Counts")
+        plt.show()
+        console.print()
+
     # Sort ascending by deviation; rank 1 is the best-performing material.
     sorted_results = sorted(results, key=lambda x: x["deviation"])
 
