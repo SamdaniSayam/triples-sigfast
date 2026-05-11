@@ -1,6 +1,6 @@
 """
 triples_sigfast.io.hepmc
-─────────────────────────
+-------------------------
 High-performance HepMC3 ASCII (Asciiv3) event file reader.
 
 Reads the HepMC3 ASCII format produced by PYTHIA 8, Herwig 7, Sherpa,
@@ -31,7 +31,7 @@ from __future__ import annotations
 
 import numpy as np
 
-# ── Column indices for 'P' particle lines ─────────────────────────────────────
+# -- Column indices for 'P' particle lines -------------------------------------
 #  P  id  vid  pid  px  py  pz  e  m  status  [attributes...]
 _P_ID = 1
 _P_VID = 2
@@ -73,7 +73,7 @@ class HepMCReader:
         self._length_unit: str = "MM"
         self._parse()
 
-    # ── Parsing ───────────────────────────────────────────────────────────────
+    # -- Parsing ---------------------------------------------------------------
 
     def _parse(self) -> None:
         """Read the entire file and split into per-event line blocks."""
@@ -102,7 +102,7 @@ class HepMCReader:
             if not in_listing:
                 continue
 
-            # New event record → flush previous
+            # New event record -> flush previous
             if line.startswith("E "):
                 if current_lines:
                     evt = self._parse_event_lines(current_lines)
@@ -192,7 +192,7 @@ class HepMCReader:
             "mass": np.array(mass_list, dtype=np.float64),
         }
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # -- Public API ------------------------------------------------------------
 
     def get_particles(self, status: int | None = None) -> dict[str, np.ndarray]:
         """
@@ -202,8 +202,8 @@ class HepMCReader:
         ----------
         status : int or None
             HepMC3 status filter. Common values:
-            1 → final-state (stable),  2 → decayed/fragmented,
-            4 → beam particle.
+            1 -> final-state (stable),  2 -> decayed/fragmented,
+            4 -> beam particle.
             None (default) returns all particles.
 
         Returns

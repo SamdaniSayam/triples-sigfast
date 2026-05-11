@@ -1,6 +1,6 @@
 """
 triples_sigfast.nuclear.sources
-────────────────────────────────
+--------------------------------
 Neutron and photon source spectrum generators.
 
 Implements the Watt fission spectrum for spontaneous and induced fission
@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import numpy as np
 
-# ── Watt spectrum parameters (a, b) for common fission sources ───────────────
+# -- Watt spectrum parameters (a, b) for common fission sources ---------------
 # N(E) = C × exp(-E/a) × sinh(sqrt(b×E))
 # Source: ENDF/B-VIII.0, JEFF-3.3
 
@@ -31,7 +31,7 @@ _WATT_PARAMS: dict[str, tuple[float, float]] = {
     "Th-232": (1.0000, 2.6460),
 }
 
-# ── Common moderator temperatures as kT [MeV] (for reference / future use) ───
+# -- Common moderator temperatures as kT [MeV] (for reference / future use) ---
 # Room temperature (293 K): kT = 0.02526 eV = 2.526e-5 MeV
 # Hot moderator  (600 K):   kT = 0.05170 eV = 5.170e-5 MeV
 # Pass these values directly to maxwell_spectrum(temperature_mev=...)

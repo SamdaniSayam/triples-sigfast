@@ -1,6 +1,6 @@
 """
 triples_sigfast.io.mcnp
-────────────────────────
+------------------------
 Native MCNP6 MCTAL file reader.
 
 Parses the full MCTAL ASCII format produced by MCNP6, including:
@@ -48,7 +48,7 @@ class MCNPReader:
         self._header: dict = {}
         self._parse()
 
-    # ── Parsing ───────────────────────────────────────────────────────────
+    # -- Parsing -----------------------------------------------------------
 
     def _parse(self) -> None:
         with open(self.filepath) as f:
@@ -179,7 +179,7 @@ class MCNPReader:
             "tfc": np.array(tfc_data, dtype=np.float64),
         }
 
-    # ── Public API ────────────────────────────────────────────────────────
+    # -- Public API --------------------------------------------------------
 
     def get_tally(self, identifier: int | str) -> dict:
         """

@@ -1,6 +1,6 @@
 """
 triples_sigfast.hep.jets
-─────────────────────────
+-------------------------
 JIT-compiled anti-kT jet clustering algorithm.
 
 Implements the anti-kT algorithm (Cacciari, Salam, Soyez 2008), the CERN
@@ -11,12 +11,12 @@ Algorithm summary
 -----------------
 For each pair of particles (i, j), compute:
 
-    d_ij = min(pT_i^{-2}, pT_j^{-2}) · ΔR_ij² / R²
+    d_ij = min(pT_i^{-2}, pT_j^{-2}) . ΔR_ij² / R²
     d_iB = pT_i^{-2}
 
 Find the global minimum:
-  - If min is d_ij → merge particles i and j (add 4-vectors).
-  - If min is d_iB → promote particle i to a final jet, remove from list.
+  - If min is d_ij -> merge particles i and j (add 4-vectors).
+  - If min is d_iB -> promote particle i to a final jet, remove from list.
 
 Repeat until no particles remain.
 
@@ -183,7 +183,7 @@ def _find_minimum(
         pt2_i = pt2[i]
         inv_pt2_i = 1.0 / pt2_i if pt2_i > 0.0 else 1e300
 
-        # d_iB = pT_i^{-2} (anti-kT uses negative power → hard particles cluster last)
+        # d_iB = pT_i^{-2} (anti-kT uses negative power -> hard particles cluster last)
         d_iB = inv_pt2_i
         if d_iB < min_dist:
             min_dist = d_iB
@@ -233,9 +233,9 @@ def cluster_jets(
         4-vector components of input particles in GeV.
     R : float
         Jet radius parameter. Typical values:
-        0.4 → ATLAS/CMS small-R jets (boosted topology studies)
-        0.8 → CMS AK8 jets (fat jets for W/Z/H tagging)
-        1.0 → ATLAS large-R jets
+        0.4 -> ATLAS/CMS small-R jets (boosted topology studies)
+        0.8 -> CMS AK8 jets (fat jets for W/Z/H tagging)
+        1.0 -> ATLAS large-R jets
     min_pt : float
         Minimum jet pT threshold in GeV. Jets below this are discarded.
         Default 0.0 (keep all jets).

@@ -1,6 +1,6 @@
 """
 triples_sigfast.io.lhe
-──────────────────────
+----------------------
 High-performance Les Houches Event (LHE) file reader.
 
 Reads the LHEF 1.0 / 2.0 / 3.0 ASCII format produced by PYTHIA, Herwig,
@@ -32,7 +32,7 @@ import re
 
 import numpy as np
 
-# ── LHE column indices (per-particle line, fixed format) ─────────────────────
+# -- LHE column indices (per-particle line, fixed format) ---------------------
 #  0: IDUP   (PDG particle ID)
 #  1: ISTUP  (status code: -1 incoming, +1 final-state, +2 intermediate)
 #  2: MOTHUP1 (first mother index)
@@ -77,7 +77,7 @@ class LHEReader:
         self._init_header: str = ""
         self._parse()
 
-    # ── Parsing ───────────────────────────────────────────────────────────────
+    # -- Parsing ---------------------------------------------------------------
 
     def _parse(self) -> None:
         """Block-read the entire file and extract all event blocks."""
@@ -125,7 +125,7 @@ class LHEReader:
         except (ValueError, IndexError):
             return None  # pragma: no cover
 
-        # --- Particle lines → float64 arrays via np.fromstring (C speed) ---
+        # --- Particle lines -> float64 arrays via np.fromstring (C speed) ---
         particle_lines = lines[1 : 1 + n_particles]
         if not particle_lines:
             return None  # pragma: no cover
@@ -169,7 +169,7 @@ class LHEReader:
             "mass": np.array(mass_list, dtype=np.float64),
         }
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # -- Public API ------------------------------------------------------------
 
     def get_particles(self, status: int | None = None) -> dict[str, np.ndarray]:
         """
@@ -179,7 +179,7 @@ class LHEReader:
         ----------
         status : int or None
             If given, filter by ISTUP status code:
-            -1 → incoming beam,  1 → final-state,  2 → intermediate.
+            -1 -> incoming beam,  1 -> final-state,  2 -> intermediate.
             If None (default), returns all particles.
 
         Returns

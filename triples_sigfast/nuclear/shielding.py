@@ -1,6 +1,6 @@
 """
 triples_sigfast.nuclear.shielding
-──────────────────────────────────
+----------------------------------
 Radiation shielding calculations.
 
 Implements Beer-Lambert attenuation with Geometric Progression (GP) buildup
@@ -20,7 +20,7 @@ from functools import lru_cache
 
 import numpy as np
 
-# ── NIST mass attenuation coefficients mu/rho [cm^2/g] at common energies ─────
+# -- NIST mass attenuation coefficients mu/rho [cm^2/g] at common energies -----
 # Source: NIST XCOM database
 # Energies: 0.1, 0.5, 1.0, 1.25, 2.0, 5.0, 10.0 MeV
 
@@ -99,7 +99,7 @@ _MATERIALS: dict[str, dict] = {
     },
 }
 
-# ── GP buildup factor coefficients (ANSI/ANS-6.4.3) ───────────────────────────
+# -- GP buildup factor coefficients (ANSI/ANS-6.4.3) ---------------------------
 # Format: {material: {energy_MeV: (b, c, a, Xk, d)}}
 # Valid for point isotropic source geometry, 1 <= mux <= 40 mfp
 # Aluminum intentionally omitted — falls back to B=1 (conservative)

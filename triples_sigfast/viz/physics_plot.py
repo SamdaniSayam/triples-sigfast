@@ -1,6 +1,6 @@
 """
 triples_sigfast.viz.physics_plot
-─────────────────────────────────
+---------------------------------
 Publication-quality physics plots in one line of code.
 
 Supports 6 journal styles out of the box and lets users define
@@ -35,7 +35,7 @@ from typing import Any, cast
 import numpy as np
 from numpy.typing import ArrayLike
 
-# ── Journal style definitions ─────────────────────────────────────────────────
+# -- Journal style definitions -------------------------------------------------
 
 _JOURNAL_STYLES: dict[str, dict] = {
     "publication": {
@@ -312,7 +312,7 @@ class PhysicsPlot:
 
         self._apply_matplotlib_style()
 
-    # ── Style management ──────────────────────────────────────────────────────
+    # -- Style management ------------------------------------------------------
 
     def _apply_matplotlib_style(self) -> None:
         """Apply journal style to matplotlib rcParams."""
@@ -377,7 +377,7 @@ class PhysicsPlot:
             style = base
         _JOURNAL_STYLES[name] = style
 
-    # ── Plot methods ──────────────────────────────────────────────────────────
+    # -- Plot methods ----------------------------------------------------------
 
     def spectrum(
         self,
@@ -611,6 +611,112 @@ class PhysicsPlot:
                     },
                     text=[f"{energies[p]:.3f}" for p in peaks],
                     textposition="top center",
+                )
+            )
+
+        fig.update_layout(
+            title=title,
+            xaxis_title=xlabel,
+            yaxis_title=ylabel,
+            xaxis_type=xscale if xscale == "log" else "-",
+            yaxis_type=yscale if yscale == "log" else "-",
+            template="plotly_white",
+            font={"size": self._style["font_size"]},
+            width=int(self._style["fig_width"] * 96),
+            height=int(self._style["fig_height"] * 96),
+        )
+        self._figures.append(fig)
+        fig.show()
+        return fig
+
+    def compare_spectra(
+        self,
+        results: list[dict],
+        title: str = "Spectra Comparison",
+        xlabel: str = "Energy (MeV)",
+        ylabel: str = "Counts",
+        xscale: str = "linear",
+        yscale: str = "log",
+    ) -> Any:
+        """
+        Plot multiple smoothed spectra on the same figure for comparison.
+
+        Parameters
+        ----------
+        results : list of dict
+            List containing dictionaries with 'energies', 'smoothed', and 'label'.
+        title : str
+            Figure title.
+        xlabel : str
+            X-axis label.
+        ylabel : str
+            Y-axis label.
+        xscale : str
+            'linear' or 'log'.
+        yscale : str
+            'linear' or 'log'.
+        """
+        if self._interactive:
+            return self._compare_spectra_plotly(  # pragma: no cover
+                results, title, xlabel, ylabel, xscale, yscale
+            )
+        return self._compare_spectra_matplotlib(
+            results, title, xlabel, ylabel, xscale, yscale
+        )
+
+    def _compare_spectra_matplotlib(
+        self, results, title, xlabel, ylabel, xscale, yscale
+    ):
+        import matplotlib.pyplot as plt
+
+        colors = self._style["color_cycle"]
+
+        fig, ax = plt.subplots(
+            figsize=(self._style["fig_width"], self._style["fig_height"])
+        )
+
+        if self._style.get("grid", True):
+            ax.grid(alpha=self._grid_alpha)
+
+        for i, r in enumerate(results):
+            color = colors[i % len(colors)]
+            ax.plot(
+                r["energies"],
+                r["smoothed"],
+                color=color,
+                lw=self._style["line_width"],
+                label=r["label"],
+            )
+
+        ax.set_title(title, fontsize=self._style["font_size"] + 1)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_xscale(xscale)
+        ax.set_yscale(yscale)
+        ax.legend(fontsize=self._style.get("legend_fontsize", 10) - 1)
+
+        plt.tight_layout()
+        self._figures.append(fig)
+        plt.close(fig)
+        return fig
+
+    def _compare_spectra_plotly(  # pragma: no cover
+        self, results, title, xlabel, ylabel, xscale, yscale
+    ):
+        import plotly.graph_objects as go  # pragma: no cover
+
+        colors = self._style["color_cycle"]
+
+        fig = go.Figure()
+        for i, r in enumerate(results):
+            color = colors[i % len(colors)]
+            fig.add_trace(
+                go.Scatter(
+                    x=r["energies"],
+                    y=r["smoothed"],
+                    mode="lines",
+                    name=r["label"],
+                    line={"color": color, "width": self._style["line_width"]},
                 )
             )
 
@@ -1003,7 +1109,7 @@ class PhysicsPlot:
         fig.show()
         return fig
 
-    # ── Export ────────────────────────────────────────────────────────────────
+    # -- Export ----------------------------------------------------------------
 
     def save(
         self,
@@ -1053,14 +1159,14 @@ class PhysicsPlot:
                     fig.write_image(filepath, scale=save_dpi / 96)
                 else:
                     fig.write_html(filepath)  # pragma: no cover
-                print(f"Saved interactive figure → {filepath}")  # pragma: no cover
+                print(f"Saved interactive figure -> {filepath}")  # pragma: no cover
                 return  # pragma: no cover
         except ImportError:
             pass
 
         cast(Any, fig).savefig(filepath, dpi=save_dpi, bbox_inches="tight")
         label = f" ({journal})" if journal else ""
-        print(f"Saved{label} → {filepath}  [{save_dpi} DPI]")
+        print(f"Saved{label} -> {filepath}  [{save_dpi} DPI]")
 
     def save_all(
         self,
@@ -1129,9 +1235,9 @@ class PhysicsPlot:
         )
         with open(filepath, "w") as f:
             f.write(tex)
-        print(f"LaTeX figure environment → {filepath}")
+        print(f"LaTeX figure environment -> {filepath}")
 
-    # ── Helpers ───────────────────────────────────────────────────────────────
+    # -- Helpers ---------------------------------------------------------------
 
     @staticmethod
     def _hex_to_rgb(hex_color: str) -> str:  # pragma: no cover

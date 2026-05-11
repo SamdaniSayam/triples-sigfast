@@ -1,15 +1,22 @@
 """
 triples_sigfast.cli.main
-─────────────────────────
-Command-line interface for triples-sigfast.
+------------------------
+Command-line interface entry point for triples-sigfast.
 
-Usage:
+Each subcommand is implemented as a Click command attached to the root `cli`
+group.  All heavy imports (NumPy, Numba-compiled modules, I/O backends) are
+deferred to the body of each command function so that `--help` and
+`--version` remain instant.
+
+Available subcommands
+---------------------
     sigfast analyze  <file>
     sigfast compare  <file1> <file2> ...
     sigfast dose     --flux FLUX --energy ENERGY --particle PARTICLE
     sigfast shield   --material MATERIAL --thickness THICKNESS --energy ENERGY
     sigfast report   <file1> <file2> ...
     sigfast info
+    sigfast welcome
     sigfast guide
 """
 
@@ -24,207 +31,242 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
+# Module-level console used by all commands.
 console = Console()
 
 
-def _banner():  # pragma: no cover
-    from triples_sigfast.cli.welcome import print_welcome
+# ---------------------------------------------------------------------------
+# Internal helper
+# ---------------------------------------------------------------------------
 
+def _banner():  # pragma: no cover
+    """Render the welcome banner without animation (used as a command header)."""
+    from .welcome import print_welcome
     print_welcome(animated=False)
 
 
-# ── Root command group ────────────────────────────────────────────────────────
-
+# ---------------------------------------------------------------------------
+# Root command group
+# ---------------------------------------------------------------------------
 
 @click.group(invoke_without_command=True)
 @click.version_option(package_name="triples-sigfast")
 @click.pass_context
 def cli(ctx):  # pragma: no cover
-    """triples-sigfast — GIL-free physics simulation analysis engine.
+    """triples-sigfast -- GIL-free physics simulation analysis engine.
 
-    Run without a subcommand to see the welcome page.
-    Run 'sigfast --help' to list all commands.
+    Run without a subcommand to display the interactive welcome page.
+    Run 'sigfast --help' to list all available commands.
     """
+    # If no subcommand was provided, show the full animated welcome page.
     if ctx.invoked_subcommand is None:
-        from triples_sigfast.cli.welcome import print_welcome
-
+        from .welcome import print_welcome
         print_welcome(animated=True)
 
 
-# ── sigfast info ──────────────────────────────────────────────────────────────
-
+# ---------------------------------------------------------------------------
+# sigfast info
+# ---------------------------------------------------------------------------
 
 @cli.command()
 def info():  # pragma: no cover
-    """Show library info, installed version, and available modules."""
+    """Show the installed version, available modules, and standards compliance."""
     _banner()
 
-    import triples_sigfast as sf
+    from .. import __version__
 
-    table = Table(
+    # Build a table listing every sub-package and its current status.
+    module_table = Table(
         title="Installed Modules",
         show_header=True,
         header_style="bold blue",
     )
-    table.add_column("Module", style="cyan")
-    table.add_column("Description")
-    table.add_column("Status", justify="center")
+    module_table.add_column("Module", style="cyan")
+    module_table.add_column("Description")
+    module_table.add_column("Status", justify="center")
 
     modules = [
-        ("triples_sigfast.core", "JIT-compiled signal processing", "✅"),
-        ("triples_sigfast.stats", "Monte Carlo statistics", "✅"),
-        ("triples_sigfast.nuclear", "Nuclear physics (ICRP/ANSI/NIST)", "✅"),
-        ("triples_sigfast.io", "Simulation file readers", "✅"),
-        ("triples_sigfast.viz", "Publication-quality plots", "✅"),
-        ("triples_sigfast.cli", "Command-line interface", "✅"),
-        ("triples_sigfast.detectors", "Detector physics", "🔄 v2.0"),
-        ("triples_sigfast.plasma", "Plasma physics", "🔄 v2.0"),
+        ("triples_sigfast.core",      "JIT-compiled signal processing",       "available"),
+        ("triples_sigfast.stats",     "Monte Carlo statistics",                "available"),
+        ("triples_sigfast.nuclear",   "Nuclear physics (ICRP/ANSI/NIST)",     "available"),
+        ("triples_sigfast.io",        "Simulation file readers",               "available"),
+        ("triples_sigfast.viz",       "Publication-quality plots",             "available"),
+        ("triples_sigfast.cli",       "Command-line interface",                "available"),
+        ("triples_sigfast.detectors", "Detector physics",                      "planned v2.0"),
+        ("triples_sigfast.plasma",    "Plasma physics",                        "planned v2.0"),
     ]
     for mod, desc, status in modules:
-        table.add_row(mod, desc, status)
+        module_table.add_row(mod, desc, status)
 
-    console.print(f"\n[bold]Version:[/bold] {sf.__version__}")
-    console.print(table)
+    console.print(f"\n[bold]Version:[/bold] {__version__}")
+    console.print(module_table)
 
-    standards = Table(
+    # Build a second table showing the nuclear/physics standards that the
+    # library implements.
+    standards_table = Table(
         title="Standards Compliance",
         show_header=True,
         header_style="bold green",
     )
-    standards.add_column("Module")
-    standards.add_column("Standard")
-    for mod, std in [
+    standards_table.add_column("Domain")
+    standards_table.add_column("Standard")
+
+    for domain, standard in [
         ("Dose conversion", "ICRP Publication 74 (1996)"),
         ("Buildup factors", "ANSI/ANS-6.4.3-1991"),
-        ("Attenuation", "NIST XCOM database"),
-        ("Isotope data", "NUBASE2020"),
-        ("Convergence", "MCNP standard (R < 0.05)"),
+        ("Attenuation",     "NIST XCOM database"),
+        ("Isotope data",    "NUBASE2020"),
+        ("Convergence",     "MCNP standard (R < 0.05)"),
     ]:
-        standards.add_row(mod, std)
-    console.print(standards)
+        standards_table.add_row(domain, standard)
+
+    console.print(standards_table)
 
 
-# ── sigfast welcome ───────────────────────────────────────────────────────────
-
+# ---------------------------------------------------------------------------
+# sigfast welcome
+# ---------------------------------------------------------------------------
 
 @cli.command()
 def welcome():  # pragma: no cover
-    """
-    Show the triples-sigfast welcome page.
-
-    Displays the full ASCII logo, feature overview, performance metrics,
-    quick-start commands, and a random physics quote.
+    """Display the triples-sigfast welcome page with feature overview.
 
     \b
-    This is also shown automatically when you run `sigfast` with no arguments.
+    This page is also shown automatically when running `sigfast` with no
+    arguments.
 
     \b
     Example:
         sigfast welcome
     """
-    from triples_sigfast.cli.welcome import print_welcome
-
+    from .welcome import print_welcome
     print_welcome(animated=True)
 
 
-# ── sigfast analyze ───────────────────────────────────────────────────────────
-
+# ---------------------------------------------------------------------------
+# sigfast analyze
+# ---------------------------------------------------------------------------
 
 @cli.command()
 @click.argument("file", type=click.Path(exists=True))
-@click.option("--key", default=None, help="Histogram key inside file.")
-@click.option("--window", default=11, show_default=True, help="SG filter window.")
-@click.option("--polyorder", default=3, show_default=True, help="SG polynomial order.")
-@click.option(
-    "--threshold", default=0.05, show_default=True, help="MC convergence threshold."
-)
-@click.option("--output", default=None, help="Save plot to file (PDF/PNG/SVG).")
+@click.option("--key",       default=None, help="Histogram or tally key inside the file.")
+@click.option("--window",    default=11,   show_default=True, help="Savitzky-Golay filter window (must be odd).")
+@click.option("--polyorder", default=3,    show_default=True, help="Savitzky-Golay polynomial order.")
+@click.option("--threshold", default=0.05, show_default=True, help="Monte Carlo convergence threshold (mean relative error R).")
+@click.option("--output",    default=None, help="Save spectrum plot to this file (PDF/PNG/SVG).")
 def analyze(file, key, window, polyorder, threshold, output):  # pragma: no cover
-    """
-    Analyze a simulation output file.
+    """Analyze a simulation output file or raw data file.
 
-    Reads the file, checks Monte Carlo convergence, smooths the
-    energy spectrum, detects peaks, and displays a summary.
+    Reads the file, validates Monte Carlo convergence, smooths the energy
+    spectrum using a Savitzky-Golay filter, detects spectral peaks, and
+    prints a formatted summary table.
 
-    Supports: .root (Geant4), .flair (FLUKA), .mctal (MCNP), .det (SERPENT)
+    \b
+    Supported simulation formats:
+        .root   -- Geant4 (via uproot)
+        .flair  -- FLUKA
+        .mctal  -- MCNP
+        .det    -- SERPENT
+
+    \b
+    Supported raw data formats (no code required):
+        .csv, .tsv, .txt, .dat, .asc, .out
 
     \b
     Examples:
         sigfast analyze simulation.root
         sigfast analyze output.mctal --key tally_4
-        sigfast analyze neutrons.root --output figure.pdf
+        sigfast analyze spectrum.csv --output figure.pdf
+        sigfast analyze data.txt --key col1 --output plot.png
     """
     _banner()
 
-    from triples_sigfast import find_peaks, savitzky_golay
-    from triples_sigfast.io import SimReader
-    from triples_sigfast.stats.mc import (
-        is_converged,
-        mean_relative_error,
-    )
+    # Deferred imports keep startup time low and avoid loading heavy
+    # backends (uproot, Numba) for commands that do not need them.
+    from ..core.signal import find_peaks, savitzky_golay
+    from ..io import SimReader
+    from ..stats.mc import is_converged, mean_relative_error
 
+    # ---------- Step 1: Read the file ----------
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         console=console,
     ) as progress:
-        task = progress.add_task("Reading simulation file...", total=None)
+        task = progress.add_task("Reading file...", total=None)
+
         try:
             reader = SimReader(file)
-        except Exception as e:
-            console.print(f"[red]Error reading file:[/red] {e}")
+        except Exception as exc:
+            console.print(f"[red]Error reading file:[/red] {exc}")
             sys.exit(1)
 
+        # ---------- Step 2: Extract the energy spectrum ----------
         progress.update(task, description="Extracting spectrum...")
         try:
             counts, energies = reader.get_spectrum(key)
-        except Exception as e:
-            console.print(f"[red]Error extracting spectrum:[/red] {e}")
-            console.print("Try specifying a key with --key. Available keys:")
+        except Exception as exc:
+            console.print(f"[red]Error extracting spectrum:[/red] {exc}")
+            console.print("Try specifying a column or key with --key. Available keys:")
             reader.summary()
             sys.exit(1)
 
+        # ---------- Step 3: Run the analysis pipeline ----------
         progress.update(task, description="Running analysis...")
-        # R = relative_error(counts)
+
+        # Compute mean relative error -- the standard MC convergence metric.
         mre = float(mean_relative_error(counts))
+
+        # is_converged() returns a boolean array (one value per bin).
+        # All bins must satisfy R < threshold for the run to be considered converged.
         conv = is_converged(counts, threshold=threshold)
         converged = bool(conv.all())
+
+        # Smooth the raw spectrum to reduce statistical noise while preserving
+        # peak positions and amplitudes.
         smoothed = savitzky_golay(counts, window=window, polyorder=polyorder)
+
+        # Detect peaks above 5 % of the maximum -- avoids noise spikes being
+        # reported as physics peaks.
         peaks = find_peaks(
             smoothed,
             min_height=float(smoothed.max()) * 0.05,
             min_distance=10,
         )
+
         progress.update(task, description="Done.", completed=True)
 
-    table = Table(
+    # ---------- Step 4: Display results ----------
+    result_table = Table(
         title=f"Analysis: {file}",
         show_header=True,
         header_style="bold cyan",
     )
-    table.add_column("Metric", style="cyan")
-    table.add_column("Value", justify="right")
+    result_table.add_column("Metric", style="cyan")
+    result_table.add_column("Value", justify="right")
 
-    table.add_row("Total counts", f"{counts.sum():.2e}")
-    table.add_row("Energy bins", str(len(counts)))
-    table.add_row("Energy range", f"{energies[0]:.3f} – {energies[-1]:.3f} MeV")
-    table.add_row("Mean relative error", f"{mre:.4f}")
-    table.add_row(
+    result_table.add_row("Total counts",        f"{counts.sum():.2e}")
+    result_table.add_row("Energy bins",         str(len(counts)))
+    result_table.add_row("Energy range",        f"{energies[0]:.3f} - {energies[-1]:.3f} MeV")
+    result_table.add_row("Mean relative error", f"{mre:.4f}")
+    result_table.add_row(
         f"Converged (R<{threshold:.2f})",
-        "[green]YES[/green]" if converged else "[red]NO — run more histories[/red]",
+        "[green]YES[/green]" if converged else "[red]NO -- run more histories[/red]",
     )
-    table.add_row("Peaks detected", str(len(peaks)))
+    result_table.add_row("Peaks detected", str(len(peaks)))
 
+    # Report up to five peak energies; indicate if more exist.
     if len(peaks) > 0:
         peak_str = ", ".join(f"{energies[p]:.3f}" for p in peaks[:5])
         if len(peaks) > 5:
             peak_str += f" ... (+{len(peaks) - 5} more)"
-        table.add_row("Peak energies (MeV)", peak_str)
+        result_table.add_row("Peak energies (MeV)", peak_str)
 
-    console.print(table)
+    console.print(result_table)
 
+    # ---------- Step 5: Optionally save the spectrum plot ----------
     if output:
-        from triples_sigfast.viz import PhysicsPlot
+        from ..viz import PhysicsPlot
 
         plot = PhysicsPlot(style="publication")
         plot.spectrum(
@@ -232,27 +274,26 @@ def analyze(file, key, window, polyorder, threshold, output):  # pragma: no cove
             counts,
             smoothed=smoothed,
             peaks=peaks,
-            title=f"Energy Spectrum — {file}",
+            title=f"Energy Spectrum -- {Path(file).name}",
         )
         plot.save(output)
         console.print(f"[green]Plot saved:[/green] {output}")
 
 
-# ── sigfast compare ───────────────────────────────────────────────────────────
-
+# ---------------------------------------------------------------------------
+# sigfast compare
+# ---------------------------------------------------------------------------
 
 @cli.command()
 @click.argument("files", nargs=-1, type=click.Path(exists=True), required=True)
-@click.option("--labels", default=None, help="Comma-separated labels.")
-@click.option("--energy", default=1.25, show_default=True, help="Gamma energy in MeV.")
-@click.option(
-    "--output", default="comparison.pdf", show_default=True, help="Output plot."
-)
+@click.option("--labels", default=None, help="Comma-separated display labels (must match file count).")
+@click.option("--energy", default=1.25, show_default=True, help="Reference gamma energy in MeV.")
+@click.option("--output", default="comparison.pdf", show_default=True, help="Output plot filename.")
 def compare(files, labels, energy, output):  # pragma: no cover
-    """
-    Compare multiple simulation output files.
+    """Compare multiple simulation output files on a single overlay plot.
 
-    Overlays smoothed spectra and ranks by lowest deviation.
+    Applies Savitzky-Golay smoothing to every spectrum, ranks materials by
+    lowest spectral standard deviation, and saves an overlay plot.
 
     \b
     Examples:
@@ -265,93 +306,99 @@ def compare(files, labels, energy, output):  # pragma: no cover
         console.print("[red]Error:[/red] Provide at least 2 files to compare.")
         sys.exit(1)
 
+    # Build the label list; fall back to filename stems if not provided.
     label_list = labels.split(",") if labels else [Path(f).stem for f in files]
     if len(label_list) != len(files):
         console.print("[red]Error:[/red] Number of labels must match number of files.")
         sys.exit(1)
 
-    from triples_sigfast import savitzky_golay
-    from triples_sigfast.io import SimReader
-    from triples_sigfast.stats.mc import mean_relative_error
+    from ..core.signal import savitzky_golay
+    from ..io import SimReader
+    from ..stats.mc import mean_relative_error
 
+    # ---------- Read and process each file ----------
     results = []
     with Progress(
         SpinnerColumn(), TextColumn("{task.description}"), console=console
     ) as progress:
-        for f, label in zip(files, label_list):
+        for filepath, label in zip(files, label_list):
             task = progress.add_task(f"Reading {label}...", total=None)
-            reader = SimReader(f)
-            counts, energies = reader.get_spectrum()
-            smoothed = savitzky_golay(counts, window=11, polyorder=3)
-            deviation = float(np.std(smoothed))
-            mre = float(mean_relative_error(counts))
-            results.append(
-                {
-                    "label": label,
-                    "file": f,
-                    "counts": counts,
-                    "energies": energies,
-                    "smoothed": smoothed,
-                    "deviation": deviation,
-                    "mre": mre,
-                }
-            )
-            progress.update(
-                task, completed=True, description=f"[green]{label} done[/green]"
-            )
 
-    table = Table(
+            reader  = SimReader(filepath)
+            counts, energies = reader.get_spectrum()
+
+            # Smooth with default SG parameters (window=11, order=3).
+            smoothed  = savitzky_golay(counts, window=11, polyorder=3)
+
+            # Standard deviation of the smoothed spectrum is used as the
+            # ranking metric -- lower deviation implies better attenuation.
+            deviation = float(np.std(smoothed))
+            mre       = float(mean_relative_error(counts))
+
+            results.append({
+                "label":     label,
+                "file":      filepath,
+                "counts":    counts,
+                "energies":  energies,
+                "smoothed":  smoothed,
+                "deviation": deviation,
+                "mre":       mre,
+            })
+            progress.update(task, completed=True, description=f"[green]{label} done[/green]")
+
+    # ---------- Rank and display ----------
+    # Sort ascending by deviation; rank 1 is the best-performing material.
+    sorted_results = sorted(results, key=lambda x: x["deviation"])
+
+    rank_table = Table(
         title="Material Comparison",
         show_header=True,
         header_style="bold cyan",
     )
-    table.add_column("Material", style="cyan")
-    table.add_column("Total Counts", justify="right")
-    table.add_column("Deviation (std)", justify="right")
-    table.add_column("Mean R", justify="right")
-    table.add_column("Rank", justify="center")
+    rank_table.add_column("Material",       style="cyan")
+    rank_table.add_column("Total Counts",   justify="right")
+    rank_table.add_column("Deviation (std)", justify="right")
+    rank_table.add_column("Mean R",         justify="right")
+    rank_table.add_column("Rank",           justify="center")
 
-    sorted_results = sorted(results, key=lambda x: x["deviation"])
     for rank, r in enumerate(sorted_results, 1):
         marker = "[bold green]BEST[/bold green]" if rank == 1 else str(rank)
-        table.add_row(
+        rank_table.add_row(
             r["label"],
             f"{r['counts'].sum():.2e}",
             f"{r['deviation']:.4f}",
             f"{r['mre']:.4f}",
             marker,
         )
-    console.print(table)
+
+    console.print(rank_table)
     console.print(
         f"\n[bold green]Best material:[/bold green] "
         f"{sorted_results[0]['label']} "
         f"(lowest deviation: {sorted_results[0]['deviation']:.4f})"
     )
 
-    from triples_sigfast.viz import PhysicsPlot
+    # ---------- Generate and save the overlay plot ----------
+    from ..viz import PhysicsPlot
 
     plot = PhysicsPlot(style="publication")
-    for r in results:
-        plot.spectrum(
-            r["energies"],
-            r["counts"],
-            smoothed=r["smoothed"],
-            title="Material Comparison",
-            label_counts=r["label"] + " (raw)",
-            label_smoothed=r["label"] + " (smoothed)",
-        )
+    plot.compare_spectra(
+        results,
+        title="Shielding Material Comparison",
+        xlabel="Energy (MeV)",
+        ylabel="Counts",
+    )
     plot.save(output)
     console.print(f"[green]Plot saved:[/green] {output}")
 
 
-# ── sigfast dose ──────────────────────────────────────────────────────────────
-
+# ---------------------------------------------------------------------------
+# sigfast dose
+# ---------------------------------------------------------------------------
 
 @cli.command()
-@click.option(
-    "--flux", required=True, type=float, help="Particle flux in particles/cm²/s."
-)
-@click.option("--energy", required=True, type=float, help="Particle energy in MeV.")
+@click.option("--flux",     required=True, type=float, help="Particle flux in particles/cm2/s.")
+@click.option("--energy",   required=True, type=float, help="Particle energy in MeV.")
 @click.option(
     "--particle",
     default="neutron",
@@ -360,10 +407,10 @@ def compare(files, labels, energy, output):  # pragma: no cover
     help="Particle type.",
 )
 def dose(flux, energy, particle):  # pragma: no cover
-    """
-    Calculate biological dose from particle flux.
+    """Calculate ambient dose equivalent rate from particle flux.
 
-    Uses ICRP Publication 74 (1996) conversion coefficients.
+    Uses ICRP Publication 74 (1996) fluence-to-dose conversion coefficients
+    with log-log interpolation between tabulated energy points.
 
     \b
     Examples:
@@ -372,69 +419,61 @@ def dose(flux, energy, particle):  # pragma: no cover
     """
     _banner()
 
-    from triples_sigfast import flux_to_dose
+    from ..core.signal import flux_to_dose
 
-    result = flux_to_dose(flux=flux, energy_mev=energy, particle=particle)
+    # flux_to_dose delegates to nuclear/dose.py for the ICRP 74 data tables.
+    dose_rate = flux_to_dose(flux=flux, energy_mev=energy, particle=particle)
 
-    table = Table(
+    dose_table = Table(
         title="ICRP 74 Dose Calculation",
         show_header=True,
         header_style="bold cyan",
     )
-    table.add_column("Parameter", style="cyan")
-    table.add_column("Value", justify="right")
+    dose_table.add_column("Parameter", style="cyan")
+    dose_table.add_column("Value", justify="right")
 
-    table.add_row("Particle type", particle)
-    table.add_row("Energy", f"{energy:.4f} MeV")
-    table.add_row("Flux", f"{flux:.3e} particles/cm²/s")
-    table.add_row("Dose rate", f"[bold green]{result:.6f} μSv/hr[/bold green]")
-    table.add_row("ICRP occ. limit", "2000 μSv/hr")
-    table.add_row(
-        "Safe?",
-        "[green]YES[/green]"
-        if result < 2000
-        else "[red]EXCEEDS OCCUPATIONAL LIMIT[/red]",
+    # The ICRP occupational limit is 20 mSv/year averaged over 5 years,
+    # which corresponds to approximately 2000 uSv/hr for a 40-hour work week.
+    dose_table.add_row("Particle type",    particle)
+    dose_table.add_row("Energy",           f"{energy:.4f} MeV")
+    dose_table.add_row("Flux",             f"{flux:.3e} particles/cm2/s")
+    dose_table.add_row("Dose rate",        f"[bold green]{dose_rate:.6f} uSv/hr[/bold green]")
+    dose_table.add_row("ICRP occ. limit",  "2000 uSv/hr")
+    dose_table.add_row(
+        "Within limit?",
+        "[green]YES[/green]" if dose_rate < 2000 else "[red]EXCEEDS OCCUPATIONAL LIMIT[/red]",
     )
 
-    console.print(table)
+    console.print(dose_table)
     console.print("\n[dim]Standard: ICRP Publication 74, 1996[/dim]")
 
 
-# ── sigfast shield ────────────────────────────────────────────────────────────
-
+# ---------------------------------------------------------------------------
+# sigfast shield
+# ---------------------------------------------------------------------------
 
 @cli.command()
 @click.option(
     "--material",
     required=True,
-    type=click.Choice(
-        [
-            "lead",
-            "iron",
-            "concrete",
-            "water",
-            "polyethylene",
-            "aluminum",
-        ]
-    ),
+    type=click.Choice(["lead", "iron", "concrete", "water", "polyethylene", "aluminum"]),
     help="Shielding material.",
 )
 @click.option("--thickness", required=True, type=float, help="Shield thickness in cm.")
-@click.option(
-    "--energy", default=1.25, show_default=True, type=float, help="Gamma energy in MeV."
-)
+@click.option("--energy",    default=1.25, show_default=True, type=float, help="Gamma energy in MeV.")
 @click.option(
     "--geometry",
     default="point_source",
     show_default=True,
     type=click.Choice(["point_source", "plane_source", "infinite_slab"]),
-    help="Source geometry.",
+    help="Source geometry for buildup factor selection.",
 )
 def shield(material, thickness, energy, geometry):  # pragma: no cover
-    """
-    Calculate gamma ray transmission through a shield.
+    """Calculate gamma ray transmission through a shielding layer.
 
-    Uses ANSI/ANS-6.4.3 Geometric Progression buildup factors.
+    Applies the ANSI/ANS-6.4.3 Geometric Progression buildup factor model,
+    which accounts for scattered radiation that Beer-Lambert (simple exponential
+    attenuation) does not include.
 
     \b
     Examples:
@@ -443,66 +482,64 @@ def shield(material, thickness, energy, geometry):  # pragma: no cover
     """
     _banner()
 
-    from triples_sigfast.nuclear.shielding import _get_mu, attenuation_with_buildup
+    from ..nuclear.shielding import _get_mu, attenuation_with_buildup
 
-    T = attenuation_with_buildup(thickness, material, energy, geometry)
+    # Transmission with GP buildup correction (includes scattered photons).
+    T_buildup = attenuation_with_buildup(thickness, material, energy, geometry)
+
+    # Linear attenuation coefficient from the NIST XCOM database.
     mu = _get_mu(material, energy)
-    mfp = mu * thickness
-    T_bl = float(np.exp(-mu * thickness))
-    hvl = np.log(2) / mu
 
-    table = Table(
+    # Derived quantities used in the results table.
+    mfp   = mu * thickness              # mean free paths traversed
+    T_bl  = float(np.exp(-mu * thickness))  # Beer-Lambert (no scatter)
+    hvl   = np.log(2) / mu             # half-value layer in cm
+
+    shield_table = Table(
         title="ANSI/ANS-6.4.3 Shielding Calculation",
         show_header=True,
         header_style="bold cyan",
     )
-    table.add_column("Parameter", style="cyan")
-    table.add_column("Value", justify="right")
+    shield_table.add_column("Parameter", style="cyan")
+    shield_table.add_column("Value", justify="right")
 
-    table.add_row("Material", material.title())
-    table.add_row("Thickness", f"{thickness:.2f} cm")
-    table.add_row("Gamma energy", f"{energy:.4f} MeV")
-    table.add_row("Geometry", geometry)
-    table.add_row("Linear atten. coeff.", f"{mu:.4f} cm⁻¹")
-    table.add_row("Mean free paths", f"{mfp:.3f} mfp")
-    table.add_row("HVL", f"{hvl:.3f} cm")
-    table.add_row("Transmission (Beer-Lambert)", f"{T_bl * 100:.4f}%")
-    table.add_row(
-        "Transmission (GP buildup)", f"[bold green]{T * 100:.4f}%[/bold green]"
+    shield_table.add_row("Material",                    material.title())
+    shield_table.add_row("Thickness",                   f"{thickness:.2f} cm")
+    shield_table.add_row("Gamma energy",                f"{energy:.4f} MeV")
+    shield_table.add_row("Geometry",                    geometry)
+    shield_table.add_row("Linear atten. coeff.",        f"{mu:.4f} cm-1")
+    shield_table.add_row("Mean free paths",             f"{mfp:.3f} mfp")
+    shield_table.add_row("Half-value layer (HVL)",      f"{hvl:.3f} cm")
+    shield_table.add_row("Transmission (Beer-Lambert)", f"{T_bl * 100:.4f}%")
+    shield_table.add_row(
+        "Transmission (GP buildup)",
+        f"[bold green]{T_buildup * 100:.4f}%[/bold green]",
     )
-    table.add_row("Dose reduction", f"{(1 - T) * 100:.2f}%")
-    table.add_row("Buildup correction", f"{T / T_bl:.3f}× (scattered radiation)")
+    shield_table.add_row("Dose reduction",    f"{(1 - T_buildup) * 100:.2f}%")
+    shield_table.add_row(
+        "Buildup correction",
+        f"{T_buildup / T_bl:.3f}x (scattered radiation factor)",
+    )
 
-    console.print(table)
-    console.print("\n[dim]Standard: ANSI/ANS-6.4.3-1991 · NIST XCOM[/dim]")
+    console.print(shield_table)
+    console.print("\n[dim]Standards: ANSI/ANS-6.4.3-1991  |  NIST XCOM[/dim]")
 
 
-# ── sigfast report ────────────────────────────────────────────────────────────
-
+# ---------------------------------------------------------------------------
+# sigfast report
+# ---------------------------------------------------------------------------
 
 @cli.command()
 @click.argument("files", nargs=-1, type=click.Path(exists=True), required=True)
-@click.option(
-    "--output",
-    default="shielding_report.pdf",
-    show_default=True,
-    help="Output PDF report filename.",
-)
-@click.option(
-    "--title",
-    default="triples-sigfast Analysis Report",
-    show_default=True,
-    help="Report title.",
-)
-@click.option(
-    "--author", default="TripleS Studio", show_default=True, help="Author name."
-)
+@click.option("--output", default="shielding_report.pdf", show_default=True, help="Output PDF filename.")
+@click.option("--title",  default="triples-sigfast Analysis Report", show_default=True, help="Report title.")
+@click.option("--author", default="TripleS Studio", show_default=True, help="Author name for the report header.")
 def report(files, output, title, author):  # pragma: no cover
-    """
-    Generate an automated PDF report for simulation files.
+    """Generate an automated PDF report for one or more simulation files.
 
-    Runs the full analysis pipeline and writes a formatted PDF with
-    spectrum plots, MC convergence tables, and dose assessment.
+    Runs the full analysis pipeline on each file and writes a formatted PDF
+    containing spectrum plots, Monte Carlo convergence tables, and dose
+    assessment sections.
 
     \b
     Examples:
@@ -511,14 +548,17 @@ def report(files, output, title, author):  # pragma: no cover
     """
     _banner()
 
-    from triples_sigfast.cli.report import AutoReport
+    from .report import AutoReport
 
     rep = AutoReport(title=title, author=author)
-    for f in files:
-        label = Path(f).stem
-        rep.add_simulation(f, label=label)
-        console.print(f"  Added: [cyan]{label}[/cyan] ({f})")
 
+    # Register each file with a label derived from its filename stem.
+    for filepath in files:
+        label = Path(filepath).stem
+        rep.add_simulation(filepath, label=label)
+        console.print(f"  Added: [cyan]{label}[/cyan] ({filepath})")
+
+    # Run the full pipeline and write the PDF.
     with Progress(
         SpinnerColumn(), TextColumn("{task.description}"), console=console
     ) as progress:
@@ -526,23 +566,24 @@ def report(files, output, title, author):  # pragma: no cover
         try:
             rep.generate(output)
             progress.update(task, description="[green]Done.[/green]", completed=True)
-        except Exception as e:
-            console.print(f"[red]Error generating report:[/red] {e}")
+        except Exception as exc:
+            console.print(f"[red]Error generating report:[/red] {exc}")
             sys.exit(1)
 
     console.print(f"\n[bold green]Report saved:[/bold green] {output}")
 
 
-# ── sigfast guide ─────────────────────────────────────────────────────────────
-
+# ---------------------------------------------------------------------------
+# sigfast guide
+# ---------------------------------------------------------------------------
 
 @cli.command()
 def guide():  # pragma: no cover
-    """
-    Interactive guided workflow for beginners.
+    """Interactive guided workflow for first-time users.
 
-    Walks you through loading a simulation file, analyzing the
-    spectrum, calculating dose, and saving a publication plot.
+    Walks through four steps in the terminal: loading a file, analysing the
+    spectrum, calculating dose, and saving a publication plot.  No scripting
+    is required.
 
     \b
     Example:
@@ -550,80 +591,88 @@ def guide():  # pragma: no cover
     """
     _banner()
 
+    console.print("\n[bold blue]triples-sigfast Interactive Guide[/bold blue]")
+    console.print("This will walk you through a complete analysis, step by step.\n")
+
+    # ------------------------------------------------------------------
+    # Step 1 -- Load the simulation or data file
+    # ------------------------------------------------------------------
+    console.print("[bold]Step 1 of 4 -- Load your simulation or data file[/bold]")
     console.print(
-        "\n[bold blue]Welcome to the triples-sigfast guided workflow![/bold blue]"
+        "[dim]Supported: .root / .flair / .mctal / .det / "
+        ".csv / .tsv / .txt / .dat / .asc / .out[/dim]"
     )
-    console.print("This will walk you through a complete analysis step by step.\n")
+    file = click.prompt("Enter path to your file", type=click.Path())
 
-    # Step 1 — Load file
-    console.print("[bold]Step 1 of 4 — Load your simulation file[/bold]")
-    file = click.prompt(
-        "Enter path to your simulation file (.root/.flair/.mctal/.det)",
-        type=click.Path(),
-    )
     try:
-        from triples_sigfast.io import SimReader
-
+        from ..io import SimReader
         reader = SimReader(file)
-        console.print(f"[green]File loaded.[/green] Format: {reader.format.upper()}")
+        console.print(f"[green]File loaded.[/green]  Format detected: {reader.format.upper()}")
         reader.summary()
-    except Exception as e:
-        console.print(f"[red]Could not load file:[/red] {e}")
+    except Exception as exc:
+        console.print(f"[red]Could not load file:[/red] {exc}")
         sys.exit(1)
 
-    # Step 2 — Extract spectrum
-    console.print("\n[bold]Step 2 of 4 — Extract and analyse spectrum[/bold]")
-    key = click.prompt("Histogram key (press Enter for first found)", default="")
+    # ------------------------------------------------------------------
+    # Step 2 -- Extract and analyse the energy spectrum
+    # ------------------------------------------------------------------
+    console.print("\n[bold]Step 2 of 4 -- Extract and analyse the spectrum[/bold]")
+
+    # The --key option maps to histogram keys (ROOT/MCNP) or column names
+    # (CSV/TXT).  An empty string means "use first available".
+    key = click.prompt("Histogram or column key (press Enter for auto-detect)", default="")
     key = key if key else None
 
-    from triples_sigfast import find_peaks, savitzky_golay
-    from triples_sigfast.stats.mc import is_converged, mean_relative_error
+    from ..core.signal import find_peaks, savitzky_golay
+    from ..stats.mc import is_converged, mean_relative_error
 
     counts, energies = reader.get_spectrum(key)
-    smoothed = savitzky_golay(counts, window=11, polyorder=3)
-    peaks = find_peaks(
-        smoothed, min_height=float(smoothed.max()) * 0.05, min_distance=10
-    )
-    mre = float(mean_relative_error(counts))
+    smoothed  = savitzky_golay(counts, window=11, polyorder=3)
+    peaks     = find_peaks(smoothed, min_height=float(smoothed.max()) * 0.05, min_distance=10)
+    mre       = float(mean_relative_error(counts))
     converged = bool(is_converged(counts).all())
 
     console.print(f"  Bins:         {len(counts)}")
-    console.print(f"  Energy range: {energies[0]:.3f} – {energies[-1]:.3f} MeV")
+    console.print(f"  Energy range: {energies[0]:.3f} - {energies[-1]:.3f} MeV")
     console.print(f"  Mean R:       {mre:.4f}")
     console.print(
         f"  Converged:    "
-        f"{'[green]YES[/green]' if converged else '[red]NO — more histories needed[/red]'}"
+        f"{'[green]YES[/green]' if converged else '[red]NO -- more histories needed[/red]'}"
     )
     console.print(f"  Peaks found:  {len(peaks)}")
 
-    # Step 3 — Dose
-    console.print("\n[bold]Step 3 of 4 — Dose calculation[/bold]")
+    # ------------------------------------------------------------------
+    # Step 3 -- Dose calculation
+    # ------------------------------------------------------------------
+    console.print("\n[bold]Step 3 of 4 -- Dose calculation (ICRP 74)[/bold]")
     energy_mev = click.prompt("Source energy in MeV", default=2.35, type=float)
-    particle = click.prompt(
+    particle   = click.prompt(
         "Particle type",
         type=click.Choice(["neutron", "gamma"]),
         default="neutron",
     )
 
-    from triples_sigfast import flux_to_dose
+    from ..core.signal import flux_to_dose
 
     dose_rate = flux_to_dose(
         flux=float(counts.sum()),
         energy_mev=energy_mev,
         particle=particle,
     )
-    console.print(f"  [bold green]Dose rate: {dose_rate:.4f} μSv/hr[/bold green]")
+    console.print(f"  [bold green]Dose rate: {dose_rate:.4f} uSv/hr[/bold green]")
 
-    # Step 4 — Save plot
-    console.print("\n[bold]Step 4 of 4 — Save publication plot[/bold]")
-    style = click.prompt(
+    # ------------------------------------------------------------------
+    # Step 4 -- Save a publication-quality plot
+    # ------------------------------------------------------------------
+    console.print("\n[bold]Step 4 of 4 -- Save a publication-quality spectrum plot[/bold]")
+    style  = click.prompt(
         "Plot style",
         type=click.Choice(["publication", "nature", "thesis", "presentation"]),
         default="publication",
     )
     output = click.prompt("Output filename", default="spectrum_analysis.pdf")
 
-    from triples_sigfast.viz import PhysicsPlot
+    from ..viz import PhysicsPlot
 
     plot = PhysicsPlot(style=style)
     plot.spectrum(
@@ -635,8 +684,9 @@ def guide():  # pragma: no cover
     )
     plot.save(output)
 
-    console.print("\n[bold green]Analysis complete![/bold green]")
-    console.print(f"  Plot saved: {output}")
-    console.print(f"  Dose rate:  {dose_rate:.4f} μSv/hr")
-    console.print(f"  Peaks:      {len(peaks)} detected")
-    console.print("\n[dim]triples-sigfast · pip install triples-sigfast[/dim]")
+    # Final summary
+    console.print("\n[bold green]Analysis complete.[/bold green]")
+    console.print(f"  Plot saved:  {output}")
+    console.print(f"  Dose rate:   {dose_rate:.4f} uSv/hr")
+    console.print(f"  Peaks found: {len(peaks)}")
+    console.print("\n[dim]triples-sigfast  |  pip install triples-sigfast[/dim]")

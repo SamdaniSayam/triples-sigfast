@@ -1,6 +1,6 @@
 """
 triples_sigfast.cli.report
-───────────────────────────
+---------------------------
 AutoReport: one-command PDF report generator.
 
 Reads one or more simulation output files, runs the full analysis
@@ -147,7 +147,7 @@ class AutoReport:
         story = []
         styles = getSampleStyleSheet()
 
-        # ── Custom styles ─────────────────────────────────────────────────────
+        # -- Custom styles -----------------------------------------------------
         title_style = ParagraphStyle(
             "ReportTitle",
             parent=styles["Title"],
@@ -177,7 +177,7 @@ class AutoReport:
             alignment=1,
         )
 
-        # ── Cover ─────────────────────────────────────────────────────────────
+        # -- Cover -------------------------------------------------------------
         story.append(Spacer(1, 2 * cm))
         story.append(Paragraph(self.title, title_style))
         story.append(
@@ -200,7 +200,7 @@ class AutoReport:
             )
         story.append(Spacer(1, 1 * cm))
 
-        # ── Summary table ─────────────────────────────────────────────────────
+        # -- Summary table -----------------------------------------------------
         story.append(Paragraph("Summary", section_style))
 
         header = ["Label", "Format", "Bins", "Mean R", "Converged", "Peaks"]
@@ -244,7 +244,7 @@ class AutoReport:
         story.append(t)
         story.append(Spacer(1, 0.5 * cm))
 
-        # ── Per-simulation sections ───────────────────────────────────────────
+        # -- Per-simulation sections -------------------------------------------
         for i, r in enumerate(results):
             story.append(PageBreak())
             story.append(Paragraph(f"Simulation {i + 1}: {r['label']}", section_style))
@@ -307,7 +307,7 @@ class AutoReport:
             )
             story.append(mc_table)
 
-        # ── Footer ────────────────────────────────────────────────────────────
+        # -- Footer ------------------------------------------------------------
         story.append(PageBreak())
         story.append(Paragraph("Standards & References", section_style))
         refs = [
@@ -329,7 +329,7 @@ class AutoReport:
             )
         )
 
-        # ── Build PDF ─────────────────────────────────────────────────────────
+        # -- Build PDF ---------------------------------------------------------
         doc = SimpleDocTemplate(
             output_path,
             pagesize=A4,
@@ -341,15 +341,15 @@ class AutoReport:
             author=self.author,
         )
         doc.build(story)
-        print(f"Report saved → {output_path}  ({len(results)} simulation(s))")
+        print(f"Report saved -> {output_path}  ({len(results)} simulation(s))")
 
-    # ── Internal ──────────────────────────────────────────────────────────────
+    # -- Internal --------------------------------------------------------------
 
     def _run_analysis(self) -> list[dict]:
         """Run the full analysis pipeline for all added simulations."""
-        from triples_sigfast import find_peaks, savitzky_golay
-        from triples_sigfast.io import SimReader
-        from triples_sigfast.stats.mc import (
+        from ..core.signal import find_peaks, savitzky_golay
+        from ..io import SimReader
+        from ..stats.mc import (
             is_converged,
             mean_relative_error,
             relative_error,
