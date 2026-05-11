@@ -2,6 +2,23 @@
 
 All notable changes to triples-sigfast will be documented here.
 
+## [Unreleased]
+
+### Documentation
+
+- Auto-update CHANGELOG for v1.7.0
+
+
+### chore
+
+- Bump version to 1.8.0 and standardize codebase formatting
+
+
+### style
+
+- Apply ruff formatting
+
+
 ## [1.7.0] - 2026-05-09
 
 ### Bug Fixes
