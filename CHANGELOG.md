@@ -2,16 +2,25 @@
 
 All notable changes to triples-sigfast will be documented here.
 
-## [Unreleased]
+## [1.8.1] - 2026-05-11
 
 ### Documentation
 
 - Auto-update CHANGELOG for v1.7.0
 
+- Auto-update CHANGELOG for 1.8.0
+
+
+### Features
+
+- Add plotext for interactive terminal plotting
+
 
 ### chore
 
 - Bump version to 1.8.0 and standardize codebase formatting
+
+- Format JOSS paper and license
 
 
 ### style
