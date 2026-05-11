@@ -182,7 +182,9 @@ def welcome():  # pragma: no cover
     show_default=True,
     help="Render spectrum plot directly in the terminal.",
 )
-def analyze(file, key, window, polyorder, threshold, output, term_plot):  # pragma: no cover
+def analyze(
+    file, key, window, polyorder, threshold, output, term_plot
+):  # pragma: no cover
     """Analyze a simulation output file or raw data file.
 
     Reads the file, validates Monte Carlo convergence, smooths the energy
