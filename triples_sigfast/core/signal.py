@@ -36,10 +36,10 @@ import numpy as np
 import pandas as pd
 from numba import njit
 
-
 # ---------------------------------------------------------------------------
 # Internal utility
 # ---------------------------------------------------------------------------
+
 
 def _ensure_float64_numpy(data) -> np.ndarray:
     """Convert the input to a C-contiguous 64-bit float NumPy array.
@@ -74,6 +74,7 @@ def _ensure_float64_numpy(data) -> np.ndarray:
 # 1. Rolling Average
 # ---------------------------------------------------------------------------
 
+
 def rolling_average(data, window_size: int):
     """Compute a moving average using the O(N) prefix-sum (cumsum) trick.
 
@@ -104,23 +105,24 @@ def rolling_average(data, window_size: int):
     if len(data) < window_size:
         raise ValueError("Data length must be >= window_size.")
 
-    is_series  = isinstance(data, pd.Series)
+    is_series = isinstance(data, pd.Series)
     clean_data = _ensure_float64_numpy(data)
 
     # Compute prefix sums once; derive all window sums via subtraction.
-    cumsum   = np.cumsum(clean_data)
-    result   = np.empty(len(clean_data) - window_size + 1, dtype=np.float64)
+    cumsum = np.cumsum(clean_data)
+    result = np.empty(len(clean_data) - window_size + 1, dtype=np.float64)
     result[0] = cumsum[window_size - 1] / window_size
     result[1:] = (cumsum[window_size:] - cumsum[:-window_size]) / window_size
 
     if is_series:
-        return pd.Series(result, index=data.index[window_size - 1:])
+        return pd.Series(result, index=data.index[window_size - 1 :])
     return result
 
 
 # ---------------------------------------------------------------------------
 # 2. Exponential Moving Average (EMA)
 # ---------------------------------------------------------------------------
+
 
 @njit(fastmath=True, cache=True, nogil=True)
 def _numba_ema(data: np.ndarray, alpha: float):  # pragma: no cover
@@ -141,7 +143,7 @@ def _numba_ema(data: np.ndarray, alpha: float):  # pragma: no cover
         Smoothing factor in (0, 1].  Derived from span as 2/(span+1).
     """
     n = len(data)
-    result    = np.empty(n, dtype=np.float64)
+    result = np.empty(n, dtype=np.float64)
     result[0] = data[0]
     for i in range(1, n):
         result[i] = alpha * data[i] + (1.0 - alpha) * result[i - 1]
@@ -169,7 +171,7 @@ def ema(data, span: int):
     if span <= 0:
         raise ValueError("span must be >= 1.")
     clean_data = _ensure_float64_numpy(data)
-    alpha  = 2.0 / (span + 1.0)
+    alpha = 2.0 / (span + 1.0)
     result = _numba_ema(clean_data, alpha)
 
     if isinstance(data, pd.Series):
@@ -180,6 +182,7 @@ def ema(data, span: int):
 # ---------------------------------------------------------------------------
 # 3. Z-score Anomaly Detection
 # ---------------------------------------------------------------------------
+
 
 def detect_anomalies(data, threshold: float = 3.0):
     """Identify statistical outliers using the Z-score method.
@@ -206,7 +209,7 @@ def detect_anomalies(data, threshold: float = 3.0):
         Boolean array; True at positions that are outliers.
     """
     is_series = isinstance(data, pd.Series)
-    arr       = _ensure_float64_numpy(data)
+    arr = _ensure_float64_numpy(data)
 
     std_val = arr.std()
     if std_val == 0.0:
@@ -224,6 +227,7 @@ def detect_anomalies(data, threshold: float = 3.0):
 # 4. EMA Crossover Strategy
 # ---------------------------------------------------------------------------
 
+
 @njit(fastmath=True, cache=True, nogil=True)
 def _numba_crossover(fast_ema: np.ndarray, slow_ema: np.ndarray):  # pragma: no cover
     """Numba JIT kernel for detecting EMA crossover events.
@@ -240,11 +244,11 @@ def _numba_crossover(fast_ema: np.ndarray, slow_ema: np.ndarray):  # pragma: no 
     slow_ema : np.ndarray
         Long-period EMA values.  Must be the same length as fast_ema.
     """
-    n       = len(fast_ema)
+    n = len(fast_ema)
     signals = np.zeros(n, dtype=np.int8)
     for i in range(1, n):
         if fast_ema[i] > slow_ema[i] and fast_ema[i - 1] <= slow_ema[i - 1]:
-            signals[i] = 1   # Bullish crossover: fast rises above slow.
+            signals[i] = 1  # Bullish crossover: fast rises above slow.
         elif fast_ema[i] < slow_ema[i] and fast_ema[i - 1] >= slow_ema[i - 1]:
             signals[i] = -1  # Bearish crossover: fast drops below slow.
     return signals
@@ -273,15 +277,16 @@ def ema_crossover_strategy(data, fast_span: int = 9, slow_span: int = 21):
         signals: int8 array of 1 (BUY), -1 (SELL), or 0 (HOLD).
     """
     clean_data = _ensure_float64_numpy(data)
-    fast_ema   = _numba_ema(clean_data, 2.0 / (fast_span + 1.0))
-    slow_ema   = _numba_ema(clean_data, 2.0 / (slow_span + 1.0))
-    signals    = _numba_crossover(fast_ema, slow_ema)
+    fast_ema = _numba_ema(clean_data, 2.0 / (fast_span + 1.0))
+    slow_ema = _numba_ema(clean_data, 2.0 / (slow_span + 1.0))
+    signals = _numba_crossover(fast_ema, slow_ema)
     return fast_ema, slow_ema, signals
 
 
 # ---------------------------------------------------------------------------
 # 5. Savitzky-Golay Filter
 # ---------------------------------------------------------------------------
+
 
 @njit(fastmath=True, cache=True, nogil=True)
 def _numba_savitzky_golay(
@@ -303,14 +308,14 @@ def _numba_savitzky_golay(
     half_win : int
         Half the filter window width (window // 2).
     """
-    n      = len(data)
+    n = len(data)
     result = np.empty(n, dtype=np.float64)
 
     # Copy edge samples unchanged (the filter cannot be applied here without
     # padding the data, which would alter the edge peak shapes).
     for i in range(half_win):
-        result[i]           = data[i]
-        result[n - 1 - i]   = data[n - 1 - i]
+        result[i] = data[i]
+        result[n - 1 - i] = data[n - 1 - i]
 
     # Apply the polynomial convolution to the interior samples.
     for i in range(half_win, n - half_win):
@@ -394,9 +399,9 @@ def savitzky_golay(data, window: int = 11, polyorder: int = 3):
         raise ValueError("Data length must be >= window.")
 
     clean_data = _ensure_float64_numpy(data)
-    coeffs     = _compute_sg_coeffs(window, polyorder)
-    half_win   = window // 2
-    result     = _numba_savitzky_golay(clean_data, coeffs, half_win)
+    coeffs = _compute_sg_coeffs(window, polyorder)
+    half_win = window // 2
+    result = _numba_savitzky_golay(clean_data, coeffs, half_win)
 
     if isinstance(data, pd.Series):
         return pd.Series(result, index=data.index)
@@ -406,6 +411,7 @@ def savitzky_golay(data, window: int = 11, polyorder: int = 3):
 # ---------------------------------------------------------------------------
 # 6. Peak Finder
 # ---------------------------------------------------------------------------
+
 
 @njit(fastmath=True, cache=True)
 def _numba_find_peaks(
@@ -428,9 +434,9 @@ def _numba_find_peaks(
     min_distance : int
         Minimum number of bins between two accepted peaks.
     """
-    n           = len(data)
+    n = len(data)
     peak_indices = np.empty(n, dtype=np.int64)
-    peak_count   = 0
+    peak_count = 0
 
     for i in range(1, n - 1):
         # Check height threshold and local maximum condition.
@@ -486,6 +492,7 @@ def find_peaks(data, min_height: float = 0.0, min_distance: int = 1):
 # coefficient tables.  The delegation avoids the duplicate-table inconsistency
 # that existed in earlier versions (where two separate copies of the tables
 # could drift out of sync).
+
 
 def flux_to_dose(flux, energy_mev: float, particle: str = "neutron"):
     """Convert particle flux to ambient dose equivalent rate H*(10).
@@ -559,15 +566,15 @@ def flux_to_dose(flux, energy_mev: float, particle: str = "neutron"):
 # triples_sigfast.nuclear.shielding.attenuation_with_buildup() instead.
 
 _ATTENUATION_MATERIALS = {
-    "lead":         {"density": 11.35, "mu_rho": 0.0708},
-    "polyethylene": {"density":  0.95, "mu_rho": 0.0636},
-    "concrete":     {"density":  2.30, "mu_rho": 0.0664},
-    "water":        {"density":  1.00, "mu_rho": 0.0706},
-    "iron":         {"density":  7.87, "mu_rho": 0.0599},
-    "bismuth":      {"density":  9.79, "mu_rho": 0.0705},
-    "tungsten":     {"density": 19.30, "mu_rho": 0.0880},
-    "borated_poly": {"density":  1.06, "mu_rho": 0.0640},
-    "polysulfone":  {"density":  1.24, "mu_rho": 0.0638},
+    "lead": {"density": 11.35, "mu_rho": 0.0708},
+    "polyethylene": {"density": 0.95, "mu_rho": 0.0636},
+    "concrete": {"density": 2.30, "mu_rho": 0.0664},
+    "water": {"density": 1.00, "mu_rho": 0.0706},
+    "iron": {"density": 7.87, "mu_rho": 0.0599},
+    "bismuth": {"density": 9.79, "mu_rho": 0.0705},
+    "tungsten": {"density": 19.30, "mu_rho": 0.0880},
+    "borated_poly": {"density": 1.06, "mu_rho": 0.0640},
+    "polysulfone": {"density": 1.24, "mu_rho": 0.0638},
 }
 
 
@@ -635,7 +642,7 @@ def attenuation(
         if mat not in _ATTENUATION_MATERIALS:
             available = list(_ATTENUATION_MATERIALS.keys())
             raise ValueError(f"Unknown material '{material}'. Available: {available}")
-        props     = _ATTENUATION_MATERIALS[mat]
+        props = _ATTENUATION_MATERIALS[mat]
         mu_linear = props["mu_rho"] * props["density"]
 
     return float(np.exp(-mu_linear * thickness_cm))
@@ -676,7 +683,7 @@ def attenuation_series(thickness_range, material: str = "lead"):
         available = list(_ATTENUATION_MATERIALS.keys())
         raise ValueError(f"Unknown material '{material}'. Available: {available}")
 
-    props     = _ATTENUATION_MATERIALS[mat]
+    props = _ATTENUATION_MATERIALS[mat]
     mu_linear = props["mu_rho"] * props["density"]
 
     # Single vectorised exp over all thicknesses -- avoids a Python loop.

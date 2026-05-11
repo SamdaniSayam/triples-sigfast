@@ -45,7 +45,6 @@ from pathlib import Path
 
 import numpy as np
 
-
 # ---------------------------------------------------------------------------
 # Format detection map
 # ---------------------------------------------------------------------------
@@ -55,22 +54,22 @@ import numpy as np
 # ---------------------------------------------------------------------------
 _EXT_MAP: dict[str, str] = {
     # Simulation engine output formats
-    ".root":   "geant4",
-    ".flair":  "fluka",
-    ".lis":    "fluka",
-    ".mctal":  "mcnp",
-    ".det":    "serpent",
-    ".m":      "serpent",
-    ".lhe":    "lhe",
-    ".hepmc":  "hepmc",
+    ".root": "geant4",
+    ".flair": "fluka",
+    ".lis": "fluka",
+    ".mctal": "mcnp",
+    ".det": "serpent",
+    ".m": "serpent",
+    ".lhe": "lhe",
+    ".hepmc": "hepmc",
     ".hepmc3": "hepmc",
     # Plain-text / raw columnar data formats
-    ".csv":    "raw",
-    ".tsv":    "raw",
-    ".txt":    "raw",
-    ".dat":    "raw",
-    ".asc":    "raw",
-    ".out":    "raw",
+    ".csv": "raw",
+    ".tsv": "raw",
+    ".txt": "raw",
+    ".dat": "raw",
+    ".asc": "raw",
+    ".out": "raw",
 }
 
 
@@ -94,6 +93,7 @@ def _detect_format(filepath: str) -> str:
 # ---------------------------------------------------------------------------
 # SimReader
 # ---------------------------------------------------------------------------
+
 
 class SimReader:
     """Universal reader for simulation output files and raw data files.
@@ -131,7 +131,7 @@ class SimReader:
     def __init__(self, filepath: str) -> None:
         self.filepath = filepath
         # Detect format from extension; raises ValueError on unknown extension.
-        self.format   = _detect_format(filepath)
+        self.format = _detect_format(filepath)
         # Load the appropriate backend.  All deferred imports live here.
         self._backend = self._load_backend(filepath, self.format)
 
@@ -166,37 +166,46 @@ class SimReader:
         """
         if fmt == "geant4":
             from triples_sigfast.io.root_reader import RootReader
+
             return RootReader(filepath)
 
         if fmt == "fluka":
             from triples_sigfast.io.fluka import FlukaReader
+
             return FlukaReader(filepath)
 
         if fmt == "mcnp":
             from triples_sigfast.io.mcnp import MCNPReader
+
             return MCNPReader(filepath)
 
         if fmt == "serpent":
             from triples_sigfast.io.serpent import SerpentReader
+
             return SerpentReader(filepath)
 
         if fmt == "lhe":
             from triples_sigfast.io.lhe import LHEReader
+
             return LHEReader(filepath)
 
         if fmt == "hepmc":
             from triples_sigfast.io.hepmc import HepMCReader
+
             return HepMCReader(filepath)
 
         if fmt == "raw":
             # RawReader handles all plain-text columnar formats with automatic
             # delimiter and column detection.
             from triples_sigfast.io.raw import RawReader
+
             return RawReader(filepath)
 
         # This branch is unreachable in normal use because _detect_format
         # would have already raised a ValueError for unknown extensions.
-        raise ValueError(f"No backend registered for format identifier: '{fmt}'")  # pragma: no cover
+        raise ValueError(
+            f"No backend registered for format identifier: '{fmt}'"
+        )  # pragma: no cover
 
     # ------------------------------------------------------------------
     # Unified public API

@@ -34,6 +34,18 @@ __version__ = "1.8.0"
 # Symbols are re-exported explicitly so that static analysers and IDEs can
 # resolve them without inspecting submodule internals.
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# High-energy physics sub-package.
+# Imported as a namespace (not unpacked) to defer Numba JIT compilation until
+# a caller actually accesses hep.* symbols.  This avoids JIT warmup cost for
+# users who only need the nuclear physics side of the library.
+# ---------------------------------------------------------------------------
+from . import hep as hep
+
+# ---------------------------------------------------------------------------
+# PDF report generator -- available at the top level for convenience.
+# ---------------------------------------------------------------------------
+from .cli.report import AutoReport as AutoReport
 from .core.signal import attenuation as attenuation
 from .core.signal import attenuation_series as attenuation_series
 from .core.signal import detect_anomalies as detect_anomalies
@@ -43,16 +55,3 @@ from .core.signal import find_peaks as find_peaks
 from .core.signal import flux_to_dose as flux_to_dose
 from .core.signal import rolling_average as rolling_average
 from .core.signal import savitzky_golay as savitzky_golay
-
-# ---------------------------------------------------------------------------
-# PDF report generator -- available at the top level for convenience.
-# ---------------------------------------------------------------------------
-from .cli.report import AutoReport as AutoReport
-
-# ---------------------------------------------------------------------------
-# High-energy physics sub-package.
-# Imported as a namespace (not unpacked) to defer Numba JIT compilation until
-# a caller actually accesses hep.* symbols.  This avoids JIT warmup cost for
-# users who only need the nuclear physics side of the library.
-# ---------------------------------------------------------------------------
-from . import hep as hep

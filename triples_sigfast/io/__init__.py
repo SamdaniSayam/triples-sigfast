@@ -32,14 +32,14 @@ automatically:
 Backends can also be instantiated directly for advanced use cases.
 """
 
-from .fluka       import FlukaReader
-from .hepmc       import HepMCReader
-from .lhe         import LHEReader
-from .mcnp        import MCNPReader
-from .raw         import RawReader
+from .fluka import FlukaReader
+from .hepmc import HepMCReader
+from .lhe import LHEReader
+from .mcnp import MCNPReader
+from .raw import RawReader
 from .root_reader import RootReader
-from .serpent     import SerpentReader
-from .sim_reader  import SimReader
+from .serpent import SerpentReader
+from .sim_reader import SimReader
 
 __all__ = [
     "SimReader",

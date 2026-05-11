@@ -97,6 +97,7 @@ _DELIMITERS = [",", "\t", None, ";"]
 # Module-level helper functions
 # ---------------------------------------------------------------------------
 
+
 def _is_comment(line: str) -> bool:
     """Return True if the stripped line is a comment or blank.
 
@@ -181,6 +182,7 @@ def _match_col(headers: list[str], pattern: re.Pattern) -> int | None:
 # RawReader class
 # ---------------------------------------------------------------------------
 
+
 class RawReader:
     """Universal reader for plain-text columnar data files.
 
@@ -206,17 +208,17 @@ class RawReader:
     """
 
     def __init__(self, filepath: str) -> None:
-        self.filepath  = filepath
-        self._path     = Path(filepath)
+        self.filepath = filepath
+        self._path = Path(filepath)
 
         # Read the entire file as lines; 'replace' handles non-UTF-8 bytes
         # commonly found in legacy DAQ exports.
         self._raw_lines: list[str] = self._path.read_text(errors="replace").splitlines()
 
         # These are populated by _parse().
-        self._headers: list[str]  = []
-        self._data: np.ndarray    = np.empty((0, 0))  # shape: (n_rows, n_cols)
-        self._delimiter           = None
+        self._headers: list[str] = []
+        self._data: np.ndarray = np.empty((0, 0))  # shape: (n_rows, n_cols)
+        self._delimiter = None
 
         # Parse the file immediately on construction so that any format errors
         # are raised before the caller attempts to use get_spectrum().
@@ -238,7 +240,7 @@ class RawReader:
         5. Reconcile the header list length with the column count.
         """
         potential_header: str | None = None
-        data_lines: list[str]        = []
+        data_lines: list[str] = []
 
         for line in self._raw_lines:
             stripped = line.strip()
@@ -250,7 +252,7 @@ class RawReader:
             # A line is a header if it contains at least one alphabetic token
             # and no data lines have been collected yet.  This correctly handles
             # files where the header is the very first non-comment line.
-            parts     = stripped.split(",") if "," in stripped else stripped.split()
+            parts = stripped.split(",") if "," in stripped else stripped.split()
             has_alpha = any(re.search(r"[a-zA-Z]", p) for p in parts)
 
             if has_alpha and not data_lines:
@@ -296,7 +298,7 @@ class RawReader:
         # Pad all rows to the same width (the maximum observed column count).
         # Shorter rows are padded with NaN so the matrix is rectangular.
         max_cols = max(len(r) for r in rows)
-        padded   = [r + [np.nan] * (max_cols - len(r)) for r in rows]
+        padded = [r + [np.nan] * (max_cols - len(r)) for r in rows]
         self._data = np.array(padded, dtype=float)
 
         # Reconcile the header list length with the actual column count.
@@ -408,13 +410,13 @@ class RawReader:
         if n_cols == 1:
             # Single-column file: interpret the one column as counts and
             # generate a synthetic integer energy axis (bin indices).
-            counts   = self._data[:, 0]
+            counts = self._data[:, 0]
             energies = np.arange(len(self._data), dtype=float)
 
         elif key is not None:
             # Caller specified a counts column explicitly via --key.
             counts_col = self._resolve_col(key)
-            counts     = self._data[:, counts_col]
+            counts = self._data[:, counts_col]
 
             # Try to find an energy column via heuristics; avoid picking the
             # same column as the counts column.
@@ -432,16 +434,16 @@ class RawReader:
             if energy_col is not None and counts_col is not None:
                 # Both columns identified by name.
                 energies = self._data[:, energy_col]
-                counts   = self._data[:, counts_col]
+                counts = self._data[:, counts_col]
             elif n_cols >= 2:
                 # Heuristic failed: fall back to positional convention
                 # (column 0 = energy, column 1 = counts).
                 energies = self._data[:, 0]
-                counts   = self._data[:, 1]
+                counts = self._data[:, 1]
             else:
                 # Single effective column after detection.
                 energies = np.arange(len(self._data), dtype=float)
-                counts   = self._data[:, 0]
+                counts = self._data[:, 0]
 
         # Remove any rows where either array contains NaN or inf.
         mask = np.isfinite(counts) & np.isfinite(energies)
@@ -467,15 +469,15 @@ class RawReader:
             'errors' -- zero array (no error estimate available)
             'bins'   -- synthetic integer indices
         """
-        col    = self._resolve_col(name)
+        col = self._resolve_col(name)
         values = self._data[:, col]
-        mask   = np.isfinite(values)
-        vals   = values[mask]
+        mask = np.isfinite(values)
+        vals = values[mask]
         return {
-            "name":   name,
+            "name": name,
             "values": vals,
             "errors": np.zeros_like(vals),  # Raw data carries no statistical errors.
-            "bins":   np.arange(len(vals), dtype=float),
+            "bins": np.arange(len(vals), dtype=float),
         }
 
     def keys(self) -> list[str]:
@@ -493,21 +495,21 @@ class RawReader:
             show_header=True,
             header_style="bold cyan",
         )
-        table.add_column("Index",        style="dim", justify="right")
-        table.add_column("Column",       style="cyan")
-        table.add_column("Min",          justify="right")
-        table.add_column("Max",          justify="right")
-        table.add_column("Mean",         justify="right")
+        table.add_column("Index", style="dim", justify="right")
+        table.add_column("Column", style="cyan")
+        table.add_column("Min", justify="right")
+        table.add_column("Max", justify="right")
+        table.add_column("Mean", justify="right")
         table.add_column("Non-NaN Rows", justify="right")
 
         for i, header in enumerate(self._headers):
-            col   = self._data[:, i]
+            col = self._data[:, i]
             valid = col[np.isfinite(col)]
             table.add_row(
                 str(i),
                 header,
-                f"{valid.min():.4g}"  if len(valid) else "N/A",
-                f"{valid.max():.4g}"  if len(valid) else "N/A",
+                f"{valid.min():.4g}" if len(valid) else "N/A",
+                f"{valid.max():.4g}" if len(valid) else "N/A",
                 f"{valid.mean():.4g}" if len(valid) else "N/A",
                 str(len(valid)),
             )

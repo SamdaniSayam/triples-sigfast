@@ -39,15 +39,18 @@ console = Console()
 # Internal helper
 # ---------------------------------------------------------------------------
 
+
 def _banner():  # pragma: no cover
     """Render the welcome banner without animation (used as a command header)."""
     from .welcome import print_welcome
+
     print_welcome(animated=False)
 
 
 # ---------------------------------------------------------------------------
 # Root command group
 # ---------------------------------------------------------------------------
+
 
 @click.group(invoke_without_command=True)
 @click.version_option(package_name="triples-sigfast")
@@ -61,12 +64,14 @@ def cli(ctx):  # pragma: no cover
     # If no subcommand was provided, show the full animated welcome page.
     if ctx.invoked_subcommand is None:
         from .welcome import print_welcome
+
         print_welcome(animated=True)
 
 
 # ---------------------------------------------------------------------------
 # sigfast info
 # ---------------------------------------------------------------------------
+
 
 @cli.command()
 def info():  # pragma: no cover
@@ -86,14 +91,14 @@ def info():  # pragma: no cover
     module_table.add_column("Status", justify="center")
 
     modules = [
-        ("triples_sigfast.core",      "JIT-compiled signal processing",       "available"),
-        ("triples_sigfast.stats",     "Monte Carlo statistics",                "available"),
-        ("triples_sigfast.nuclear",   "Nuclear physics (ICRP/ANSI/NIST)",     "available"),
-        ("triples_sigfast.io",        "Simulation file readers",               "available"),
-        ("triples_sigfast.viz",       "Publication-quality plots",             "available"),
-        ("triples_sigfast.cli",       "Command-line interface",                "available"),
-        ("triples_sigfast.detectors", "Detector physics",                      "planned v2.0"),
-        ("triples_sigfast.plasma",    "Plasma physics",                        "planned v2.0"),
+        ("triples_sigfast.core", "JIT-compiled signal processing", "available"),
+        ("triples_sigfast.stats", "Monte Carlo statistics", "available"),
+        ("triples_sigfast.nuclear", "Nuclear physics (ICRP/ANSI/NIST)", "available"),
+        ("triples_sigfast.io", "Simulation file readers", "available"),
+        ("triples_sigfast.viz", "Publication-quality plots", "available"),
+        ("triples_sigfast.cli", "Command-line interface", "available"),
+        ("triples_sigfast.detectors", "Detector physics", "planned v2.0"),
+        ("triples_sigfast.plasma", "Plasma physics", "planned v2.0"),
     ]
     for mod, desc, status in modules:
         module_table.add_row(mod, desc, status)
@@ -114,9 +119,9 @@ def info():  # pragma: no cover
     for domain, standard in [
         ("Dose conversion", "ICRP Publication 74 (1996)"),
         ("Buildup factors", "ANSI/ANS-6.4.3-1991"),
-        ("Attenuation",     "NIST XCOM database"),
-        ("Isotope data",    "NUBASE2020"),
-        ("Convergence",     "MCNP standard (R < 0.05)"),
+        ("Attenuation", "NIST XCOM database"),
+        ("Isotope data", "NUBASE2020"),
+        ("Convergence", "MCNP standard (R < 0.05)"),
     ]:
         standards_table.add_row(domain, standard)
 
@@ -126,6 +131,7 @@ def info():  # pragma: no cover
 # ---------------------------------------------------------------------------
 # sigfast welcome
 # ---------------------------------------------------------------------------
+
 
 @cli.command()
 def welcome():  # pragma: no cover
@@ -140,6 +146,7 @@ def welcome():  # pragma: no cover
         sigfast welcome
     """
     from .welcome import print_welcome
+
     print_welcome(animated=True)
 
 
@@ -147,13 +154,28 @@ def welcome():  # pragma: no cover
 # sigfast analyze
 # ---------------------------------------------------------------------------
 
+
 @cli.command()
 @click.argument("file", type=click.Path(exists=True))
-@click.option("--key",       default=None, help="Histogram or tally key inside the file.")
-@click.option("--window",    default=11,   show_default=True, help="Savitzky-Golay filter window (must be odd).")
-@click.option("--polyorder", default=3,    show_default=True, help="Savitzky-Golay polynomial order.")
-@click.option("--threshold", default=0.05, show_default=True, help="Monte Carlo convergence threshold (mean relative error R).")
-@click.option("--output",    default=None, help="Save spectrum plot to this file (PDF/PNG/SVG).")
+@click.option("--key", default=None, help="Histogram or tally key inside the file.")
+@click.option(
+    "--window",
+    default=11,
+    show_default=True,
+    help="Savitzky-Golay filter window (must be odd).",
+)
+@click.option(
+    "--polyorder", default=3, show_default=True, help="Savitzky-Golay polynomial order."
+)
+@click.option(
+    "--threshold",
+    default=0.05,
+    show_default=True,
+    help="Monte Carlo convergence threshold (mean relative error R).",
+)
+@click.option(
+    "--output", default=None, help="Save spectrum plot to this file (PDF/PNG/SVG)."
+)
 def analyze(file, key, window, polyorder, threshold, output):  # pragma: no cover
     """Analyze a simulation output file or raw data file.
 
@@ -245,9 +267,9 @@ def analyze(file, key, window, polyorder, threshold, output):  # pragma: no cove
     result_table.add_column("Metric", style="cyan")
     result_table.add_column("Value", justify="right")
 
-    result_table.add_row("Total counts",        f"{counts.sum():.2e}")
-    result_table.add_row("Energy bins",         str(len(counts)))
-    result_table.add_row("Energy range",        f"{energies[0]:.3f} - {energies[-1]:.3f} MeV")
+    result_table.add_row("Total counts", f"{counts.sum():.2e}")
+    result_table.add_row("Energy bins", str(len(counts)))
+    result_table.add_row("Energy range", f"{energies[0]:.3f} - {energies[-1]:.3f} MeV")
     result_table.add_row("Mean relative error", f"{mre:.4f}")
     result_table.add_row(
         f"Converged (R<{threshold:.2f})",
@@ -284,11 +306,23 @@ def analyze(file, key, window, polyorder, threshold, output):  # pragma: no cove
 # sigfast compare
 # ---------------------------------------------------------------------------
 
+
 @cli.command()
 @click.argument("files", nargs=-1, type=click.Path(exists=True), required=True)
-@click.option("--labels", default=None, help="Comma-separated display labels (must match file count).")
-@click.option("--energy", default=1.25, show_default=True, help="Reference gamma energy in MeV.")
-@click.option("--output", default="comparison.pdf", show_default=True, help="Output plot filename.")
+@click.option(
+    "--labels",
+    default=None,
+    help="Comma-separated display labels (must match file count).",
+)
+@click.option(
+    "--energy", default=1.25, show_default=True, help="Reference gamma energy in MeV."
+)
+@click.option(
+    "--output",
+    default="comparison.pdf",
+    show_default=True,
+    help="Output plot filename.",
+)
 def compare(files, labels, energy, output):  # pragma: no cover
     """Compare multiple simulation output files on a single overlay plot.
 
@@ -324,27 +358,31 @@ def compare(files, labels, energy, output):  # pragma: no cover
         for filepath, label in zip(files, label_list):
             task = progress.add_task(f"Reading {label}...", total=None)
 
-            reader  = SimReader(filepath)
+            reader = SimReader(filepath)
             counts, energies = reader.get_spectrum()
 
             # Smooth with default SG parameters (window=11, order=3).
-            smoothed  = savitzky_golay(counts, window=11, polyorder=3)
+            smoothed = savitzky_golay(counts, window=11, polyorder=3)
 
             # Standard deviation of the smoothed spectrum is used as the
             # ranking metric -- lower deviation implies better attenuation.
             deviation = float(np.std(smoothed))
-            mre       = float(mean_relative_error(counts))
+            mre = float(mean_relative_error(counts))
 
-            results.append({
-                "label":     label,
-                "file":      filepath,
-                "counts":    counts,
-                "energies":  energies,
-                "smoothed":  smoothed,
-                "deviation": deviation,
-                "mre":       mre,
-            })
-            progress.update(task, completed=True, description=f"[green]{label} done[/green]")
+            results.append(
+                {
+                    "label": label,
+                    "file": filepath,
+                    "counts": counts,
+                    "energies": energies,
+                    "smoothed": smoothed,
+                    "deviation": deviation,
+                    "mre": mre,
+                }
+            )
+            progress.update(
+                task, completed=True, description=f"[green]{label} done[/green]"
+            )
 
     # ---------- Rank and display ----------
     # Sort ascending by deviation; rank 1 is the best-performing material.
@@ -355,11 +393,11 @@ def compare(files, labels, energy, output):  # pragma: no cover
         show_header=True,
         header_style="bold cyan",
     )
-    rank_table.add_column("Material",       style="cyan")
-    rank_table.add_column("Total Counts",   justify="right")
+    rank_table.add_column("Material", style="cyan")
+    rank_table.add_column("Total Counts", justify="right")
     rank_table.add_column("Deviation (std)", justify="right")
-    rank_table.add_column("Mean R",         justify="right")
-    rank_table.add_column("Rank",           justify="center")
+    rank_table.add_column("Mean R", justify="right")
+    rank_table.add_column("Rank", justify="center")
 
     for rank, r in enumerate(sorted_results, 1):
         marker = "[bold green]BEST[/bold green]" if rank == 1 else str(rank)
@@ -396,9 +434,12 @@ def compare(files, labels, energy, output):  # pragma: no cover
 # sigfast dose
 # ---------------------------------------------------------------------------
 
+
 @cli.command()
-@click.option("--flux",     required=True, type=float, help="Particle flux in particles/cm2/s.")
-@click.option("--energy",   required=True, type=float, help="Particle energy in MeV.")
+@click.option(
+    "--flux", required=True, type=float, help="Particle flux in particles/cm2/s."
+)
+@click.option("--energy", required=True, type=float, help="Particle energy in MeV.")
 @click.option(
     "--particle",
     default="neutron",
@@ -434,14 +475,16 @@ def dose(flux, energy, particle):  # pragma: no cover
 
     # The ICRP occupational limit is 20 mSv/year averaged over 5 years,
     # which corresponds to approximately 2000 uSv/hr for a 40-hour work week.
-    dose_table.add_row("Particle type",    particle)
-    dose_table.add_row("Energy",           f"{energy:.4f} MeV")
-    dose_table.add_row("Flux",             f"{flux:.3e} particles/cm2/s")
-    dose_table.add_row("Dose rate",        f"[bold green]{dose_rate:.6f} uSv/hr[/bold green]")
-    dose_table.add_row("ICRP occ. limit",  "2000 uSv/hr")
+    dose_table.add_row("Particle type", particle)
+    dose_table.add_row("Energy", f"{energy:.4f} MeV")
+    dose_table.add_row("Flux", f"{flux:.3e} particles/cm2/s")
+    dose_table.add_row("Dose rate", f"[bold green]{dose_rate:.6f} uSv/hr[/bold green]")
+    dose_table.add_row("ICRP occ. limit", "2000 uSv/hr")
     dose_table.add_row(
         "Within limit?",
-        "[green]YES[/green]" if dose_rate < 2000 else "[red]EXCEEDS OCCUPATIONAL LIMIT[/red]",
+        "[green]YES[/green]"
+        if dose_rate < 2000
+        else "[red]EXCEEDS OCCUPATIONAL LIMIT[/red]",
     )
 
     console.print(dose_table)
@@ -452,15 +495,20 @@ def dose(flux, energy, particle):  # pragma: no cover
 # sigfast shield
 # ---------------------------------------------------------------------------
 
+
 @cli.command()
 @click.option(
     "--material",
     required=True,
-    type=click.Choice(["lead", "iron", "concrete", "water", "polyethylene", "aluminum"]),
+    type=click.Choice(
+        ["lead", "iron", "concrete", "water", "polyethylene", "aluminum"]
+    ),
     help="Shielding material.",
 )
 @click.option("--thickness", required=True, type=float, help="Shield thickness in cm.")
-@click.option("--energy",    default=1.25, show_default=True, type=float, help="Gamma energy in MeV.")
+@click.option(
+    "--energy", default=1.25, show_default=True, type=float, help="Gamma energy in MeV."
+)
 @click.option(
     "--geometry",
     default="point_source",
@@ -491,9 +539,9 @@ def shield(material, thickness, energy, geometry):  # pragma: no cover
     mu = _get_mu(material, energy)
 
     # Derived quantities used in the results table.
-    mfp   = mu * thickness              # mean free paths traversed
-    T_bl  = float(np.exp(-mu * thickness))  # Beer-Lambert (no scatter)
-    hvl   = np.log(2) / mu             # half-value layer in cm
+    mfp = mu * thickness  # mean free paths traversed
+    T_bl = float(np.exp(-mu * thickness))  # Beer-Lambert (no scatter)
+    hvl = np.log(2) / mu  # half-value layer in cm
 
     shield_table = Table(
         title="ANSI/ANS-6.4.3 Shielding Calculation",
@@ -503,19 +551,19 @@ def shield(material, thickness, energy, geometry):  # pragma: no cover
     shield_table.add_column("Parameter", style="cyan")
     shield_table.add_column("Value", justify="right")
 
-    shield_table.add_row("Material",                    material.title())
-    shield_table.add_row("Thickness",                   f"{thickness:.2f} cm")
-    shield_table.add_row("Gamma energy",                f"{energy:.4f} MeV")
-    shield_table.add_row("Geometry",                    geometry)
-    shield_table.add_row("Linear atten. coeff.",        f"{mu:.4f} cm-1")
-    shield_table.add_row("Mean free paths",             f"{mfp:.3f} mfp")
-    shield_table.add_row("Half-value layer (HVL)",      f"{hvl:.3f} cm")
+    shield_table.add_row("Material", material.title())
+    shield_table.add_row("Thickness", f"{thickness:.2f} cm")
+    shield_table.add_row("Gamma energy", f"{energy:.4f} MeV")
+    shield_table.add_row("Geometry", geometry)
+    shield_table.add_row("Linear atten. coeff.", f"{mu:.4f} cm-1")
+    shield_table.add_row("Mean free paths", f"{mfp:.3f} mfp")
+    shield_table.add_row("Half-value layer (HVL)", f"{hvl:.3f} cm")
     shield_table.add_row("Transmission (Beer-Lambert)", f"{T_bl * 100:.4f}%")
     shield_table.add_row(
         "Transmission (GP buildup)",
         f"[bold green]{T_buildup * 100:.4f}%[/bold green]",
     )
-    shield_table.add_row("Dose reduction",    f"{(1 - T_buildup) * 100:.2f}%")
+    shield_table.add_row("Dose reduction", f"{(1 - T_buildup) * 100:.2f}%")
     shield_table.add_row(
         "Buildup correction",
         f"{T_buildup / T_bl:.3f}x (scattered radiation factor)",
@@ -529,11 +577,27 @@ def shield(material, thickness, energy, geometry):  # pragma: no cover
 # sigfast report
 # ---------------------------------------------------------------------------
 
+
 @cli.command()
 @click.argument("files", nargs=-1, type=click.Path(exists=True), required=True)
-@click.option("--output", default="shielding_report.pdf", show_default=True, help="Output PDF filename.")
-@click.option("--title",  default="triples-sigfast Analysis Report", show_default=True, help="Report title.")
-@click.option("--author", default="TripleS Studio", show_default=True, help="Author name for the report header.")
+@click.option(
+    "--output",
+    default="shielding_report.pdf",
+    show_default=True,
+    help="Output PDF filename.",
+)
+@click.option(
+    "--title",
+    default="triples-sigfast Analysis Report",
+    show_default=True,
+    help="Report title.",
+)
+@click.option(
+    "--author",
+    default="TripleS Studio",
+    show_default=True,
+    help="Author name for the report header.",
+)
 def report(files, output, title, author):  # pragma: no cover
     """Generate an automated PDF report for one or more simulation files.
 
@@ -577,6 +641,7 @@ def report(files, output, title, author):  # pragma: no cover
 # sigfast guide
 # ---------------------------------------------------------------------------
 
+
 @cli.command()
 def guide():  # pragma: no cover
     """Interactive guided workflow for first-time users.
@@ -606,8 +671,11 @@ def guide():  # pragma: no cover
 
     try:
         from ..io import SimReader
+
         reader = SimReader(file)
-        console.print(f"[green]File loaded.[/green]  Format detected: {reader.format.upper()}")
+        console.print(
+            f"[green]File loaded.[/green]  Format detected: {reader.format.upper()}"
+        )
         reader.summary()
     except Exception as exc:
         console.print(f"[red]Could not load file:[/red] {exc}")
@@ -620,16 +688,20 @@ def guide():  # pragma: no cover
 
     # The --key option maps to histogram keys (ROOT/MCNP) or column names
     # (CSV/TXT).  An empty string means "use first available".
-    key = click.prompt("Histogram or column key (press Enter for auto-detect)", default="")
+    key = click.prompt(
+        "Histogram or column key (press Enter for auto-detect)", default=""
+    )
     key = key if key else None
 
     from ..core.signal import find_peaks, savitzky_golay
     from ..stats.mc import is_converged, mean_relative_error
 
     counts, energies = reader.get_spectrum(key)
-    smoothed  = savitzky_golay(counts, window=11, polyorder=3)
-    peaks     = find_peaks(smoothed, min_height=float(smoothed.max()) * 0.05, min_distance=10)
-    mre       = float(mean_relative_error(counts))
+    smoothed = savitzky_golay(counts, window=11, polyorder=3)
+    peaks = find_peaks(
+        smoothed, min_height=float(smoothed.max()) * 0.05, min_distance=10
+    )
+    mre = float(mean_relative_error(counts))
     converged = bool(is_converged(counts).all())
 
     console.print(f"  Bins:         {len(counts)}")
@@ -646,7 +718,7 @@ def guide():  # pragma: no cover
     # ------------------------------------------------------------------
     console.print("\n[bold]Step 3 of 4 -- Dose calculation (ICRP 74)[/bold]")
     energy_mev = click.prompt("Source energy in MeV", default=2.35, type=float)
-    particle   = click.prompt(
+    particle = click.prompt(
         "Particle type",
         type=click.Choice(["neutron", "gamma"]),
         default="neutron",
@@ -664,8 +736,10 @@ def guide():  # pragma: no cover
     # ------------------------------------------------------------------
     # Step 4 -- Save a publication-quality plot
     # ------------------------------------------------------------------
-    console.print("\n[bold]Step 4 of 4 -- Save a publication-quality spectrum plot[/bold]")
-    style  = click.prompt(
+    console.print(
+        "\n[bold]Step 4 of 4 -- Save a publication-quality spectrum plot[/bold]"
+    )
+    style = click.prompt(
         "Plot style",
         type=click.Choice(["publication", "nature", "thesis", "presentation"]),
         default="publication",

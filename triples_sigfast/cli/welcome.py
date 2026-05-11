@@ -46,13 +46,13 @@ console = Console()
 # All colour names are Rich style tokens.  Centralised here so the entire
 # page can be recoloured by changing these constants.
 # ---------------------------------------------------------------------------
-_ACCENT  = "bright_cyan"    # primary accent -- headings and bullet markers
-_DIM     = "grey50"         # secondary text -- labels, dim annotations
-_GOLD    = "yellow"         # highlight -- version number, command labels
-_GREEN   = "bright_green"   # nuclear physics card
-_BLUE    = "steel_blue1"    # logo gradient, alternate accent
+_ACCENT = "bright_cyan"  # primary accent -- headings and bullet markers
+_DIM = "grey50"  # secondary text -- labels, dim annotations
+_GOLD = "yellow"  # highlight -- version number, command labels
+_GREEN = "bright_green"  # nuclear physics card
+_BLUE = "steel_blue1"  # logo gradient, alternate accent
 _MAGENTA = "medium_orchid"  # signal/stats card
-_WHITE   = "bright_white"   # section headings
+_WHITE = "bright_white"  # section headings
 
 
 # ---------------------------------------------------------------------------
@@ -127,6 +127,7 @@ _QUOTES = [
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+
 def _get_version() -> str:
     """Return the installed package version string.
 
@@ -135,6 +136,7 @@ def _get_version() -> str:
     """
     try:
         from .. import __version__
+
         return __version__
     except Exception:
         return "1.7.0"
@@ -154,8 +156,19 @@ def _draw_logo(wide: bool) -> None:
         # across the two rows of the logo to give a layered visual effect.
         lines = _LOGO.splitlines()
         colours = [
-            _ACCENT, _BLUE, _BLUE, _ACCENT, _BLUE, _BLUE, "",
-            _MAGENTA, _MAGENTA, _ACCENT, _MAGENTA, _MAGENTA, _MAGENTA,
+            _ACCENT,
+            _BLUE,
+            _BLUE,
+            _ACCENT,
+            _BLUE,
+            _BLUE,
+            "",
+            _MAGENTA,
+            _MAGENTA,
+            _ACCENT,
+            _MAGENTA,
+            _MAGENTA,
+            _MAGENTA,
         ]
         for line, colour in zip(lines, colours + [_DIM] * 20):
             if colour:
@@ -234,9 +247,9 @@ def _draw_feature_cards() -> None:
 
     cards = Columns(
         [
-            _card("Nuclear Physics",      _GREEN,   nuclear_lines),
-            _card("High-Energy Physics",  _ACCENT,  hep_lines),
-            _card("Signal and Stats",     _MAGENTA, signal_lines),
+            _card("Nuclear Physics", _GREEN, nuclear_lines),
+            _card("High-Energy Physics", _ACCENT, hep_lines),
+            _card("Signal and Stats", _MAGENTA, signal_lines),
         ],
         equal=True,
         expand=True,
@@ -260,10 +273,10 @@ def _draw_performance_bar() -> None:
         return t
 
     table.add_row(
-        _stat("@njit + prange",  "Parallel JIT Backend",        _GOLD),
-        _stat("100M+ rows/s",    "Throughput",                   _GREEN),
-        _stat("470 tests",       "Test Suite",                   _ACCENT),
-        _stat(">= 15x faster",   "vs. readline on 2 GB LHE",    _MAGENTA),
+        _stat("@njit + prange", "Parallel JIT Backend", _GOLD),
+        _stat("100M+ rows/s", "Throughput", _GREEN),
+        _stat("470 tests", "Test Suite", _ACCENT),
+        _stat(">= 15x faster", "vs. readline on 2 GB LHE", _MAGENTA),
     )
     console.print(
         Panel(
@@ -311,8 +324,8 @@ def _draw_quick_start() -> None:
 
     for label, cmd, desc in commands:
         label_text = Text(f"  [{label:<8}]", style=f"bold {_GOLD}")
-        cmd_text   = Text(cmd,               style=f"bold {_ACCENT}")
-        desc_text  = Text(f"  # {desc}",     style=_DIM)
+        cmd_text = Text(cmd, style=f"bold {_ACCENT}")
+        desc_text = Text(f"  # {desc}", style=_DIM)
         line = Text.assemble(label_text, "  ", cmd_text, desc_text)
         console.print(line)
 
@@ -346,6 +359,7 @@ def _draw_quote() -> None:
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
+
 
 def print_welcome(animated: bool = True, _console: Console | None = None) -> None:
     """Print the full triples-sigfast welcome page to the terminal.
