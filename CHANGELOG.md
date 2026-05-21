@@ -2,25 +2,20 @@
 
 All notable changes to triples-sigfast will be documented here.
 
-## [1.8.1] - 2026-05-11
-
-### Documentation
-
-- Auto-update CHANGELOG for v1.7.0
-
-- Auto-update CHANGELOG for 1.8.0
-
+## [1.8.2] - 2026-05-21
 
 ### Features
 
-- Add plotext for interactive terminal plotting
+- **Detectors Package (`triples_sigfast.detectors`)**: Fully implemented physics-validated response models for NaI(Tl), HPGe, He-3, and BF3 counters. Computes intrinsic photon/neutron efficiencies and Fano-factor-based resolution estimation.
+- **Plasma Sub-package (`triples_sigfast.plasma`)**: Added Doppler-broadened fusion neutron spectrum simulation (D-T and D-D), thermonuclear reaction rates via Bosch-Hale parameterisation, and structural material activation saturation calculations.
+- **LorentzVector class (`triples_sigfast.hep.kinematics`)**: Implemented ergonomic, OOP-style 4-vector algebra with properties (pt, p, mass, eta, phi, rapidity, beta, gamma), arithmetic operator overloading, $\Delta R$ angular separations, and component-wise NumPy exports.
+- **Unified Material Tables**: Consolidated and centralized NIST XCOM and ANSI/ANS-6.4.3 material attenuation properties inside `nuclear/shielding.py` as a single authoritative source, dynamically building the `core/signal.py` lookup tables at import time. Added bismuth, tungsten, borated polyethylene, and polysulfone.
 
+### Testing and Quality Assurance
 
-### chore
-
-- Bump version to 1.8.0 and standardize codebase formatting
-
-- Format JOSS paper and license
+- Expanded tests to **650 unit and integration tests** (+180 tests), raising total test coverage to **96.78%** (with `io/raw.py` coverage rising from 17% to 95%).
+- Resolved welcome TTY-drawing branches coverage using mock terminal consoles.
+- Standardized codebase quality with zero lint or formatting errors (verified with Ruff).
 
 
 ### style

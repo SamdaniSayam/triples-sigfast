@@ -19,15 +19,15 @@ io        -- Simulation file readers (Geant4, FLUKA, MCNP, SERPENT, raw data)
 viz       -- Publication-quality spectrum and shielding plots
 cli       -- Command-line interface (sigfast analyze, compare, dose, shield ...)
 hep       -- High-energy physics sub-package (LHE/HepMC3 I/O, jet clustering)
-detectors -- Detector physics models (planned v2.0)
-plasma    -- Plasma physics models (planned v2.0)
+detectors -- Detector physics models (NaI, HPGe, He-3, BF3 response)
+plasma    -- Plasma physics models (fusion neutronics and material activation)
 """
 
 # ---------------------------------------------------------------------------
 # Package version string.
 # Must be kept in sync with pyproject.toml and setup.py.
 # ---------------------------------------------------------------------------
-__version__ = "1.8.1"
+__version__ = "1.8.2"
 
 # ---------------------------------------------------------------------------
 # Core signal processing.
