@@ -2,6 +2,18 @@
 
 All notable changes to triples-sigfast will be documented here.
 
+## [Unreleased]
+
+### Documentation
+
+- Auto-update CHANGELOG for v1.8.1
+
+
+### style
+
+- Apply ruff formatting to main.py
+
+
 ## [1.8.1] - 2026-05-11
 
 ### Documentation
