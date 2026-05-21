@@ -2,11 +2,13 @@
 
 All notable changes to triples-sigfast will be documented here.
 
-## [Unreleased]
+## [1.8.2] - 2026-05-21
 
 ### Documentation
 
 - Auto-update CHANGELOG for v1.8.1
+
+- Auto-update CHANGELOG for main
 
 
 ### style
