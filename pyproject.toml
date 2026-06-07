@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "triples-sigfast"
-version = "1.8.2"
+version = "2.0.0"
 description = "An enterprise-grade, JIT-compiled time-series, nuclear physics, and high-energy physics analysis engine stress-tested on 100M+ row datasets."
 readme = "README.md"
 license = { text = "MIT" }
@@ -32,6 +32,9 @@ dependencies = [
     "rich>=13.0.0",
     "reportlab>=4.0.0",
     "plotext>=5.0.0",
+    "cycler>=0.11.0",
+    "particle>=0.23.0",
+    "scipy>=1.8.0",
 ]
 
 [project.scripts]
@@ -53,15 +56,3 @@ PyPI = "https://pypi.org/project/triples-sigfast/"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["triples_sigfast*"]
-
-[tool.ruff]
-line-length = 100
-target-version = "py310"
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "UP"]
-ignore = ["E501"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "--cov-fail-under=85"

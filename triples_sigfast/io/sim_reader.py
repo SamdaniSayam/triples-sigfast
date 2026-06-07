@@ -45,6 +45,8 @@ from pathlib import Path
 
 import numpy as np
 
+from triples_sigfast.core.pipeline import SigPipeline
+
 # ---------------------------------------------------------------------------
 # Format detection map
 # ---------------------------------------------------------------------------
@@ -261,6 +263,19 @@ class SimReader:
     def keys(self) -> list[str]:
         """Return all available histogram, tally, or column names in the file."""
         return self._backend.keys()
+
+    def iterate(self, *args, **kwargs) -> SigPipeline:
+        """
+        Return a SigPipeline for lazy iteration over the file's data in chunks.
+        Delegates to the backend's `iterate` or `iterate_tree` method.
+        """
+        if hasattr(self._backend, "iterate_tree") and self.format == "geant4":
+            return self._backend.iterate_tree(*args, **kwargs)
+        if hasattr(self._backend, "iterate"):
+            return self._backend.iterate(*args, **kwargs)
+        raise NotImplementedError(
+            f"Chunked iteration is not supported for format '{self.format}'."
+        )
 
     def __repr__(self) -> str:
         return f"SimReader('{self.filepath}', format='{self.format}')"

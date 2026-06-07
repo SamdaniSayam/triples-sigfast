@@ -14,12 +14,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-try:
-    import uproot
-except ImportError as e:
-    raise ImportError(
-        "uproot is required for RootReader. Install it with: pip install uproot"
-    ) from e  # pragma: no cover
+from triples_sigfast.core.pipeline import SigPipeline
 
 
 class RootReader:
@@ -41,6 +36,12 @@ class RootReader:
     """
 
     def __init__(self, filepath: str) -> None:
+        try:
+            import uproot
+        except ImportError as e:
+            raise ImportError(
+                "uproot is required for RootReader. Install with: pip install uproot"
+            ) from e
         self.filepath = filepath
         self._file = uproot.open(filepath)
         self._keys: list[str] = self._file.keys()
@@ -59,6 +60,17 @@ class RootReader:
             try:
                 obj = self._file[key]
                 if obj.classname in hist_types:
+                    result.append(key)
+            except Exception:  # pragma: no cover
+                continue
+        return result
+
+    def tree_keys(self) -> list[str]:
+        """Return only keys that correspond to TTree objects."""
+        result = []
+        for key in self._keys:
+            try:
+                if self._file[key].classname == "TTree":
                     result.append(key)
             except Exception:  # pragma: no cover
                 continue
@@ -133,6 +145,37 @@ class RootReader:
         bin_centres = 0.5 * (edges[:-1] + edges[1:])
         return counts.astype(np.float64), bin_centres.astype(np.float64)
 
+    def iterate_tree(
+        self,
+        key: str,
+        step_size: str | int = "100 MB",
+        expressions: list[str] | str | None = None,
+        library: str = "pd",
+        **kwargs,
+    ) -> SigPipeline:
+        """
+        Iterate over a TTree in chunks using uproot.iterate.
+
+        Returns a SigPipeline for lazy processing of the chunks.
+        """
+        import uproot
+
+        resolved = self._resolve_key(key)
+        tree = self._file[resolved]
+        if tree.classname != "TTree":
+            raise ValueError(f"Object '{resolved}' is a {tree.classname}, not a TTree.")
+
+        # uproot.iterate takes the file path and tree name
+        path_with_tree = f"{self.filepath}:{resolved}"
+        iterator = uproot.iterate(
+            path_with_tree,
+            expressions=expressions,
+            step_size=step_size,
+            library=library,
+            **kwargs,
+        )
+        return SigPipeline(iterator)
+
     def get_histogram_2d(
         self,
         key: str,
@@ -176,6 +219,29 @@ class RootReader:
             except Exception:  # pragma: no cover
                 continue  # pragma: no cover
         return result
+
+    def get_tally(self, name: str) -> dict:
+        """
+        Return a tally-style dict for a named histogram.
+
+        Provides compatibility with the SimReader.get_tally() API.
+
+        Parameters
+        ----------
+        name : str
+            Histogram key (exact or partial match).
+
+        Returns
+        -------
+        dict with keys: 'name', 'values', 'errors', 'bins'.
+        """
+        counts, bin_centres = self.get_spectrum(name)
+        return {
+            "name": name,
+            "values": counts,
+            "errors": np.zeros_like(counts),
+            "bins": bin_centres,
+        }
 
     # -- Export -------------------------------------------------------------
 

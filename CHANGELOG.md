@@ -2,6 +2,21 @@
 
 All notable changes to triples-sigfast will be documented here.
 
+## [2.0.0] - 2026-06-08
+
+### Features
+
+- **Massive Data Handling (ROOT-like)**: Introduced `SigPipeline` for pure Python out-of-core streaming of datasets exceeding memory capacity. Includes Pandas chunked reading and `uproot.iterate` for ROOT `TTree` chunking.
+- **Monte Carlo Generation (PYTHIA-like)**: Added `hep.mc` containing a fully vectorized Numba RAMBO algorithm for N-body phase space generation, natively producing flat $N \times 4$ NumPy arrays.
+- **Data-Oriented Decays**: Updated `hep.kinematics` with `decay_two_body`, adhering to strict Data-Oriented Design by processing massive arrays without object instantiation overhead.
+- **Ahead-of-Time PDG Ingestion**: Added the `particle` library dependency. Extracted PDG data into Numba `typed.Dict`/arrays during setup for cache-safe, GIL-free $O(\log N)$ binary search lookups inside hot loops.
+- **JIT-Compiled Fitting**: Expanded `stats.fitting` with Numba PDFs (Crystal Ball, Voigtian) and a `build_nll_cost_function` factory that compiles entire Negative Log-Likelihood cost functions to machine code for massive speedups in `scipy.optimize`.
+
+### Refactoring
+
+- **CLI Streaming**: Added `--stream` flag to CLI to natively support the new out-of-core analysis.
+- **OOP JIT Deprecation**: Deprecated using `@jitclass` `LorentzVector` in hot loops in favor of strict flat array vectorization.
+
 ## [1.8.2] - 2026-05-21
 ### Documentation
 

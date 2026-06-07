@@ -123,19 +123,8 @@ class AutoReport:
             raise RuntimeError("No simulations added. Call add_simulation() first.")
 
         try:
-            from reportlab.lib import colors
-            from reportlab.lib.pagesizes import A4
-            from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-            from reportlab.lib.units import cm
-            from reportlab.platypus import (
-                Image,
-                PageBreak,
-                Paragraph,
-                SimpleDocTemplate,
-                Spacer,
-                Table,
-                TableStyle,
-            )
+            import reportlab  # noqa: F401
+
         except ImportError as e:
             raise ImportError(
                 "reportlab is required for AutoReport. "
@@ -143,7 +132,25 @@ class AutoReport:
             ) from e
 
         results = self._run_analysis()
-        tmpdir = tempfile.mkdtemp()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self._build_pdf(results, tmpdir, output_path)
+
+    def _build_pdf(self, results: list[dict], tmpdir: str, output_path: str) -> None:
+        """Build the PDF report from analysis results."""
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+        from reportlab.lib.units import cm
+        from reportlab.platypus import (
+            Image,
+            PageBreak,
+            Paragraph,
+            SimpleDocTemplate,
+            Spacer,
+            Table,
+            TableStyle,
+        )
+
         story = []
         styles = getSampleStyleSheet()
 
@@ -347,9 +354,9 @@ class AutoReport:
 
     def _run_analysis(self) -> list[dict]:
         """Run the full analysis pipeline for all added simulations."""
-        from ..core.signal import find_peaks, savitzky_golay
-        from ..io import SimReader
-        from ..stats.mc import (
+        from triples_sigfast.core.signal import find_peaks, savitzky_golay
+        from triples_sigfast.io import SimReader
+        from triples_sigfast.stats.mc import (
             is_converged,
             mean_relative_error,
             relative_error,

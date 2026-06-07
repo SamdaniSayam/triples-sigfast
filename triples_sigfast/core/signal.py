@@ -32,6 +32,9 @@ Implementation notes
   inside function bodies, not at module import time.
 """
 
+import functools
+import warnings
+
 import numpy as np
 import pandas as pd
 from numba import njit
@@ -99,6 +102,11 @@ def rolling_average(data, window_size: int):
     np.ndarray or pd.Series
         Smoothed array of length len(data) - window_size + 1.
         Returns pd.Series (with aligned index) when input is pd.Series.
+
+    .. warning::
+        For arrays exceeding ~10M elements, the prefix-sum implementation may
+        accumulate floating-point rounding errors. Results remain accurate to
+        ~12 significant digits for typical scientific datasets.
     """
     if window_size <= 0:
         raise ValueError("window_size must be >= 1.")
@@ -171,6 +179,8 @@ def ema(data, span: int):
     if span <= 0:
         raise ValueError("span must be >= 1.")
     clean_data = _ensure_float64_numpy(data)
+    if len(clean_data) == 0:
+        return np.array([], dtype=np.float64)
     alpha = 2.0 / (span + 1.0)
     result = _numba_ema(clean_data, alpha)
 
@@ -212,7 +222,7 @@ def detect_anomalies(data, threshold: float = 3.0):
     arr = _ensure_float64_numpy(data)
 
     std_val = arr.std()
-    if std_val == 0.0:
+    if std_val < np.finfo(np.float64).tiny:
         # Constant array: no outliers by definition.
         result = np.zeros(len(arr), dtype=np.bool_)
     else:
@@ -277,6 +287,12 @@ def ema_crossover_strategy(data, fast_span: int = 9, slow_span: int = 21):
         signals: int8 array of 1 (BUY), -1 (SELL), or 0 (HOLD).
     """
     clean_data = _ensure_float64_numpy(data)
+    if len(clean_data) == 0:
+        raise ValueError("Input array must not be empty.")
+    if fast_span >= slow_span:
+        raise ValueError(
+            f"fast_span ({fast_span}) must be less than slow_span ({slow_span})."
+        )
     fast_ema = _numba_ema(clean_data, 2.0 / (fast_span + 1.0))
     slow_ema = _numba_ema(clean_data, 2.0 / (slow_span + 1.0))
     signals = _numba_crossover(fast_ema, slow_ema)
@@ -327,6 +343,7 @@ def _numba_savitzky_golay(
     return result
 
 
+@functools.lru_cache(maxsize=32)
 def _compute_sg_coeffs(window: int, polyorder: int) -> np.ndarray:
     """Compute Savitzky-Golay convolution coefficients via least squares.
 
@@ -391,6 +408,8 @@ def savitzky_golay(data, window: int = 11, polyorder: int = 3):
     --------
     >>> smoothed = savitzky_golay(neutron_counts, window=11, polyorder=3)
     """
+    if window < 3:
+        raise ValueError(f"window must be >= 3, got {window}.")
     if window % 2 == 0:
         raise ValueError("window must be odd (e.g., 11, 13, 15).")
     if polyorder >= window:
@@ -435,7 +454,8 @@ def _numba_find_peaks(
         Minimum number of bins between two accepted peaks.
     """
     n = len(data)
-    peak_indices = np.empty(n, dtype=np.int64)
+    max_peaks = min(n, 100000)
+    peak_indices = np.empty(max_peaks, dtype=np.int64)
     peak_count = 0
 
     for i in range(1, n - 1):
@@ -443,6 +463,8 @@ def _numba_find_peaks(
         if data[i] > min_height and data[i] > data[i - 1] and data[i] > data[i + 1]:
             # Check minimum separation from the last accepted peak.
             if peak_count == 0 or (i - peak_indices[peak_count - 1]) >= min_distance:
+                if peak_count >= max_peaks:
+                    break
                 peak_indices[peak_count] = i
                 peak_count += 1
 
@@ -472,6 +494,11 @@ def find_peaks(data, min_height: float = 0.0, min_distance: int = 1):
     -------
     np.ndarray
         Integer array of bin indices at which peaks were detected.
+
+    Notes
+    -----
+    Peaks at the first and last indices of the array are excluded by design,
+    as boundary elements cannot be compared with both neighbours.
 
     Examples
     --------
@@ -539,6 +566,8 @@ def flux_to_dose(flux, energy_mev: float, particle: str = "neutron"):
     particle = particle.lower()
     if particle not in ("neutron", "gamma"):
         raise ValueError("particle must be 'neutron' or 'gamma'.")
+    if np.any(np.asarray(flux) < 0):
+        raise ValueError(f"flux must be >= 0, got {flux}.")
     if energy_mev <= 0:
         raise ValueError("energy_mev must be > 0.")
 
@@ -558,24 +587,64 @@ def flux_to_dose(flux, energy_mev: float, particle: str = "neutron"):
 # ---------------------------------------------------------------------------
 # Mass attenuation coefficients (mu/rho) in cm2/g at approximately 1 MeV.
 # Source: NIST XCOM Photon Cross Sections Database.
-# Density values are standard reference values in g/cm3.
 #
-# These values are used for the Beer-Lambert simple-exponential attenuation
-# calculation in attenuation() and attenuation_series().  For a more accurate
-# calculation that accounts for scattered photons (buildup), use
-# triples_sigfast.nuclear.shielding.attenuation_with_buildup() instead.
+# This table is derived from the canonical material data in
+# triples_sigfast.nuclear.shielding._MATERIALS, which is the single
+# authoritative source for all material constants in this library.
+# The 1.00 MeV value from the energy-resolved table is used as the
+# representative single-energy mu/rho for Beer-Lambert calculations.
+#
+# For energy-resolved calculations or a more accurate result that accounts
+# for scattered photon buildup, use:
+#   triples_sigfast.nuclear.shielding.attenuation_with_buildup()
+#
+# DO NOT add materials here directly — add them to nuclear/shielding._MATERIALS
+# and they will appear here automatically.
 
-_ATTENUATION_MATERIALS = {
-    "lead": {"density": 11.35, "mu_rho": 0.0708},
-    "polyethylene": {"density": 0.95, "mu_rho": 0.0636},
-    "concrete": {"density": 2.30, "mu_rho": 0.0664},
-    "water": {"density": 1.00, "mu_rho": 0.0706},
-    "iron": {"density": 7.87, "mu_rho": 0.0599},
-    "bismuth": {"density": 9.79, "mu_rho": 0.0705},
-    "tungsten": {"density": 19.30, "mu_rho": 0.0880},
-    "borated_poly": {"density": 1.06, "mu_rho": 0.0640},
-    "polysulfone": {"density": 1.24, "mu_rho": 0.0638},
-}
+
+def _build_attenuation_table() -> dict:
+    """Build the Beer-Lambert material table from the canonical shielding data.
+
+    Uses the 1 MeV mu/rho value from nuclear.shielding._MATERIALS as the
+    representative single-energy attenuation coefficient for each material.
+    Falls back to a hardcoded default only for the 6 ANSI/ANS-6.4.3 materials
+    if the import fails.
+    """
+    try:
+        from triples_sigfast.nuclear.shielding import _MATERIALS as _shield_mats
+
+        table = {}
+        for name, props in _shield_mats.items():
+            mu_rho_dict = props.get("mu_over_rho", {})
+            # Use 1.0 MeV value if available; fall back to closest available.
+            if 1.00 in mu_rho_dict:
+                mu_rho = mu_rho_dict[1.00]
+            elif mu_rho_dict:
+                # Closest energy to 1 MeV
+                closest = min(mu_rho_dict.keys(), key=lambda e: abs(e - 1.0))
+                mu_rho = mu_rho_dict[closest]
+            else:
+                continue
+            table[name] = {"density": props["density"], "mu_rho": mu_rho}
+        return table
+    except ImportError:
+        warnings.warn(
+            "Could not import nuclear.shielding; using hardcoded fallback "
+            "attenuation data.",
+            ImportWarning,
+            stacklevel=2,
+        )
+        return {
+            "lead": {"density": 11.35, "mu_rho": 0.0710},
+            "polyethylene": {"density": 0.94, "mu_rho": 0.0705},
+            "concrete": {"density": 2.30, "mu_rho": 0.0637},
+            "water": {"density": 1.00, "mu_rho": 0.0707},
+            "iron": {"density": 7.87, "mu_rho": 0.0599},
+            "aluminum": {"density": 2.70, "mu_rho": 0.0615},
+        }
+
+
+_ATTENUATION_MATERIALS = _build_attenuation_table()
 
 
 def attenuation(
