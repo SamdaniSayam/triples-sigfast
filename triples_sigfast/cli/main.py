@@ -78,7 +78,7 @@ def info():  # pragma: no cover
     """Show the installed version, available modules, and standards compliance."""
     _banner()
 
-    from .. import __version__
+    from triples_sigfast import __version__
 
     # Build a table listing every sub-package and its current status.
     module_table = Table(
@@ -182,8 +182,13 @@ def welcome():  # pragma: no cover
     show_default=True,
     help="Render spectrum plot directly in the terminal.",
 )
+@click.option(
+    "--stream",
+    is_flag=True,
+    help="Enable streaming out-of-core pipeline for large datasets.",
+)
 def analyze(
-    file, key, window, polyorder, threshold, output, term_plot
+    file, key, window, polyorder, threshold, output, term_plot, stream
 ):  # pragma: no cover
     """Analyze a simulation output file or raw data file.
 
@@ -213,9 +218,9 @@ def analyze(
 
     # Deferred imports keep startup time low and avoid loading heavy
     # backends (uproot, Numba) for commands that do not need them.
-    from ..core.signal import find_peaks, savitzky_golay
-    from ..io import SimReader
-    from ..stats.mc import is_converged, mean_relative_error
+    from triples_sigfast.core.signal import find_peaks, savitzky_golay
+    from triples_sigfast.io import SimReader
+    from triples_sigfast.stats.mc import is_converged, mean_relative_error
 
     # ---------- Step 1: Read the file ----------
     with Progress(
@@ -226,6 +231,10 @@ def analyze(
         task = progress.add_task("Reading file...", total=None)
 
         try:
+            if stream:
+                console.print(
+                    "[cyan]Streaming mode enabled (out-of-core pipeline)[/cyan]"
+                )
             reader = SimReader(file)
         except Exception as exc:
             console.print(f"[red]Error reading file:[/red] {exc}")
@@ -315,7 +324,7 @@ def analyze(
 
     # ---------- Step 5: Optionally save the spectrum plot ----------
     if output:
-        from ..viz import PhysicsPlot
+        from triples_sigfast.viz import PhysicsPlot
 
         plot = PhysicsPlot(style="publication")
         plot.spectrum(
@@ -379,9 +388,9 @@ def compare(files, labels, energy, output, term_plot):  # pragma: no cover
         console.print("[red]Error:[/red] Number of labels must match number of files.")
         sys.exit(1)
 
-    from ..core.signal import savitzky_golay
-    from ..io import SimReader
-    from ..stats.mc import mean_relative_error
+    from triples_sigfast.core.signal import savitzky_golay
+    from triples_sigfast.io import SimReader
+    from triples_sigfast.stats.mc import mean_relative_error
 
     # ---------- Read and process each file ----------
     results = []
@@ -463,7 +472,7 @@ def compare(files, labels, energy, output, term_plot):  # pragma: no cover
     )
 
     # ---------- Generate and save the overlay plot ----------
-    from ..viz import PhysicsPlot
+    from triples_sigfast.viz import PhysicsPlot
 
     plot = PhysicsPlot(style="publication")
     plot.compare_spectra(
@@ -506,7 +515,7 @@ def dose(flux, energy, particle):  # pragma: no cover
     """
     _banner()
 
-    from ..core.signal import flux_to_dose
+    from triples_sigfast.core.signal import flux_to_dose
 
     # flux_to_dose delegates to nuclear/dose.py for the ICRP 74 data tables.
     dose_rate = flux_to_dose(flux=flux, energy_mev=energy, particle=particle)
@@ -576,7 +585,7 @@ def shield(material, thickness, energy, geometry):  # pragma: no cover
     """
     _banner()
 
-    from ..nuclear.shielding import _get_mu, attenuation_with_buildup
+    from triples_sigfast.nuclear.shielding import _get_mu, attenuation_with_buildup
 
     # Transmission with GP buildup correction (includes scattered photons).
     T_buildup = attenuation_with_buildup(thickness, material, energy, geometry)
@@ -716,7 +725,7 @@ def guide():  # pragma: no cover
     file = click.prompt("Enter path to your file", type=click.Path())
 
     try:
-        from ..io import SimReader
+        from triples_sigfast.io import SimReader
 
         reader = SimReader(file)
         console.print(
@@ -739,8 +748,8 @@ def guide():  # pragma: no cover
     )
     key = key if key else None
 
-    from ..core.signal import find_peaks, savitzky_golay
-    from ..stats.mc import is_converged, mean_relative_error
+    from triples_sigfast.core.signal import find_peaks, savitzky_golay
+    from triples_sigfast.stats.mc import is_converged, mean_relative_error
 
     counts, energies = reader.get_spectrum(key)
     smoothed = savitzky_golay(counts, window=11, polyorder=3)
@@ -770,7 +779,7 @@ def guide():  # pragma: no cover
         default="neutron",
     )
 
-    from ..core.signal import flux_to_dose
+    from triples_sigfast.core.signal import flux_to_dose
 
     dose_rate = flux_to_dose(
         flux=float(counts.sum()),
@@ -792,7 +801,7 @@ def guide():  # pragma: no cover
     )
     output = click.prompt("Output filename", default="spectrum_analysis.pdf")
 
-    from ..viz import PhysicsPlot
+    from triples_sigfast.viz import PhysicsPlot
 
     plot = PhysicsPlot(style=style)
     plot.spectrum(

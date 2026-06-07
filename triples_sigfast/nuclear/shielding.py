@@ -97,6 +97,61 @@ _MATERIALS: dict[str, dict] = {
             10.0: 0.02317,
         },
     },
+    # -- Extended materials (NIST XCOM, mu/rho at common energies) ---------------
+    # These materials extend the GP-buildup material set.  Buildup factors are
+    # not tabulated for these in ANSI/ANS-6.4.3, so attenuation_with_buildup()
+    # will fall back to B(E,x) = 1 (conservative, no buildup correction).
+    "bismuth": {
+        "density": 9.747,
+        "mu_over_rho": {
+            0.10: 5.075,
+            0.50: 0.1488,
+            1.00: 0.07093,
+            1.25: 0.06295,
+            2.00: 0.05162,
+            5.00: 0.04057,
+            10.0: 0.04786,
+        },
+    },
+    "tungsten": {
+        "density": 19.30,
+        "mu_over_rho": {
+            0.10: 4.438,
+            0.50: 0.1437,
+            1.00: 0.06697,
+            1.25: 0.06176,
+            2.00: 0.04943,
+            5.00: 0.04130,
+            10.0: 0.05268,
+        },
+    },
+    "borated_poly": {
+        # 5 wt-% boron in polyethylene — widely used as a neutron/gamma shield.
+        # Gamma mu/rho approximated from polyethylene (B has negligible gamma xs).
+        "density": 1.06,
+        "mu_over_rho": {
+            0.10: 0.1699,
+            0.50: 0.09653,
+            1.00: 0.07048,
+            1.25: 0.06303,
+            2.00: 0.04931,
+            5.00: 0.03045,
+            10.0: 0.02262,
+        },
+    },
+    "polysulfone": {
+        # Polysulfone (C12H8O4S)n — used in medical radiation shielding.
+        "density": 1.240,
+        "mu_over_rho": {
+            0.10: 0.1710,
+            0.50: 0.09050,
+            1.00: 0.06600,
+            1.25: 0.05900,
+            2.00: 0.04800,
+            5.00: 0.03100,
+            10.0: 0.02400,
+        },
+    },
 }
 
 # -- GP buildup factor coefficients (ANSI/ANS-6.4.3) ---------------------------

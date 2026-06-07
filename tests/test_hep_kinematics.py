@@ -277,3 +277,286 @@ class TestRapidity:
         E = np.abs(pz) + rng.uniform(1, 10, N)
         y = kinematics.rapidity(E, pz)
         assert y.shape == (N,)
+
+
+# ── LorentzVector ────────────────────────────────────────────────────────────
+
+
+class TestLorentzVector:
+    """Tests for the LorentzVector convenience OOP wrapper."""
+
+    def _muon(self):
+        """45 GeV muon with moderate pT."""
+        return kinematics.LorentzVector(E=45.0, px=0.0, py=44.9, pz=1.0)
+
+    def _antimuon(self):
+        return kinematics.LorentzVector(E=45.0, px=0.0, py=-44.9, pz=-1.0)
+
+    # -- Construction and repr --------------------------------------------------
+
+    def test_construction(self):
+        v = kinematics.LorentzVector(E=10.0, px=3.0, py=4.0, pz=0.0)
+        assert v.E == 10.0
+        assert v.px == 3.0
+        assert v.py == 4.0
+        assert v.pz == 0.0
+
+    def test_repr(self):
+        v = kinematics.LorentzVector(E=10.0, px=3.0, py=4.0, pz=0.0)
+        s = repr(v)
+        assert "LorentzVector" in s
+        assert "10" in s
+
+    # -- Kinematic properties --------------------------------------------------
+
+    def test_pt_3_4_5(self):
+        """px=3, py=4 → pT = 5 (3-4-5 right triangle)."""
+        v = kinematics.LorentzVector(E=20.0, px=3.0, py=4.0, pz=0.0)
+        assert abs(v.pt - 5.0) < 1e-12
+
+    def test_p_total_momentum(self):
+        v = kinematics.LorentzVector(E=20.0, px=1.0, py=2.0, pz=2.0)
+        expected = math.sqrt(1**2 + 2**2 + 2**2)
+        assert abs(v.p - expected) < 1e-12
+
+    def test_mass_massless_particle(self):
+        """Photon: E = |p| → mass = 0."""
+        v = kinematics.LorentzVector(E=10.0, px=10.0, py=0.0, pz=0.0)
+        assert abs(v.mass) < 1e-10
+
+    def test_mass_pion(self):
+        """Approximate pion mass ~0.135 GeV."""
+        E = 1.0
+        p = math.sqrt(E**2 - 0.135**2)
+        v = kinematics.LorentzVector(E=E, px=p, py=0.0, pz=0.0)
+        assert abs(v.mass - 0.135) < 0.001
+
+    def test_mass_negative_m2_returns_zero(self):
+        """If M² < 0 due to rounding, return 0 not NaN."""
+        v = kinematics.LorentzVector(E=1.0, px=1.0, py=0.001, pz=0.0)
+        assert v.mass >= 0.0
+
+    def test_eta_transverse_particle(self):
+        """pz = 0 → η = 0."""
+        v = kinematics.LorentzVector(E=10.0, px=10.0, py=0.0, pz=0.0)
+        assert abs(v.eta) < 1e-10
+
+    def test_eta_forward_particle(self):
+        """Near beam direction → |η| >> 1."""
+        v = kinematics.LorentzVector(E=100.0, px=0.1, py=0.0, pz=99.9)
+        assert v.eta > 3.0
+
+    def test_eta_backward_particle(self):
+        v = kinematics.LorentzVector(E=100.0, px=0.1, py=0.0, pz=-99.9)
+        assert v.eta < -3.0
+
+    def test_phi_positive_x_axis(self):
+        v = kinematics.LorentzVector(E=10.0, px=1.0, py=0.0, pz=0.0)
+        assert abs(v.phi) < 1e-12
+
+    def test_phi_positive_y_axis(self):
+        v = kinematics.LorentzVector(E=10.0, px=0.0, py=1.0, pz=0.0)
+        assert abs(v.phi - math.pi / 2) < 1e-10
+
+    def test_rapidity_transverse(self):
+        """pz = 0, E > 0 → y = 0."""
+        v = kinematics.LorentzVector(E=10.0, px=0.0, py=10.0, pz=0.0)
+        assert abs(v.rapidity) < 1e-10
+
+    def test_beta_less_than_one(self):
+        v = kinematics.LorentzVector(E=10.0, px=3.0, py=4.0, pz=0.0)
+        assert 0 < v.beta < 1
+
+    def test_gamma_massless_is_inf(self):
+        v = kinematics.LorentzVector(E=10.0, px=10.0, py=0.0, pz=0.0)
+        assert v.gamma == float("inf")
+
+    def test_gamma_massive(self):
+        """For a 5 GeV proton: γ = E/m ≈ 5/0.938."""
+        m = 0.938
+        E = 5.0
+        p = math.sqrt(E**2 - m**2)
+        v = kinematics.LorentzVector(E=E, px=p, py=0.0, pz=0.0)
+        expected = E / m
+        assert abs(v.gamma - expected) < 0.01
+
+    # -- Eta edge cases --------------------------------------------------------
+
+    def test_eta_zero_momentum_returns_zero(self):
+        """p = 0 (all zeros except E) → eta returns 0 without crashing."""
+        v = kinematics.LorentzVector(E=0.0, px=0.0, py=0.0, pz=0.0)
+        eta = v.eta
+        assert isinstance(eta, float)
+
+    # -- Z boson reconstruction -----------------------------------------------
+
+    def test_z_boson_mass(self):
+        """Two back-to-back muons → M ≈ 90 GeV (Z boson)."""
+        Z = self._muon() + self._antimuon()
+        assert abs(Z.mass - 90.0) < 1.0
+
+    def test_z_boson_pt_near_zero(self):
+        """Back-to-back muons have pT ≈ 0 (exact only if perfectly back-to-back)."""
+        Z = self._muon() + self._antimuon()
+        assert Z.pt < 0.1
+
+    # -- Arithmetic operators -------------------------------------------------
+
+    def test_add_components(self):
+        v1 = kinematics.LorentzVector(E=1.0, px=2.0, py=3.0, pz=4.0)
+        v2 = kinematics.LorentzVector(E=5.0, px=6.0, py=7.0, pz=8.0)
+        v3 = v1 + v2
+        assert v3.E == 6.0
+        assert v3.px == 8.0
+        assert v3.py == 10.0
+        assert v3.pz == 12.0
+
+    def test_sub_components(self):
+        v1 = kinematics.LorentzVector(E=5.0, px=6.0, py=7.0, pz=8.0)
+        v2 = kinematics.LorentzVector(E=1.0, px=2.0, py=3.0, pz=4.0)
+        v3 = v1 - v2
+        assert v3.E == 4.0
+        assert v3.px == 4.0
+
+    def test_negate(self):
+        v = kinematics.LorentzVector(E=10.0, px=3.0, py=4.0, pz=5.0)
+        neg = -v
+        assert neg.E == -10.0
+        assert neg.px == -3.0
+
+    def test_equality(self):
+        v1 = kinematics.LorentzVector(E=10.0, px=3.0, py=4.0, pz=5.0)
+        v2 = kinematics.LorentzVector(E=10.0, px=3.0, py=4.0, pz=5.0)
+        assert v1 == v2
+
+    def test_inequality(self):
+        v1 = kinematics.LorentzVector(E=10.0, px=3.0, py=4.0, pz=5.0)
+        v2 = kinematics.LorentzVector(E=10.0, px=3.0, py=4.0, pz=6.0)
+        assert v1 != v2
+
+    def test_equality_wrong_type(self):
+        v = kinematics.LorentzVector(E=10.0, px=3.0, py=4.0, pz=5.0)
+        assert v.__eq__("not_a_vector") is NotImplemented
+
+    # -- to_numpy -------------------------------------------------------------
+
+    def test_to_numpy_shape(self):
+        import numpy as np
+
+        v = kinematics.LorentzVector(E=10.0, px=3.0, py=4.0, pz=5.0)
+        arr = v.to_numpy()
+        assert arr.shape == (4,)
+        assert arr.dtype == np.float64
+
+    def test_to_numpy_values(self):
+        import numpy as np
+
+        v = kinematics.LorentzVector(E=10.0, px=3.0, py=4.0, pz=5.0)
+        arr = v.to_numpy()
+        np.testing.assert_array_equal(arr, [10.0, 3.0, 4.0, 5.0])
+
+    # -- from_pt_eta_phi_mass -------------------------------------------------
+
+    def test_from_pt_eta_phi_mass_roundtrip(self):
+        """Construct from (pT, η, φ, m) and verify kinematic properties."""
+        pt, eta, phi, mass = 30.0, 1.5, 0.8, 0.0
+        v = kinematics.LorentzVector.from_pt_eta_phi_mass(pt, eta, phi, mass)
+        assert abs(v.pt - pt) < 1e-8
+        assert abs(v.eta - eta) < 1e-6
+        assert abs(v.phi - phi) < 1e-8
+
+    def test_from_pt_eta_phi_mass_with_mass(self):
+        """Massive particle constructed from (pT, η, φ, m) has correct mass."""
+        v = kinematics.LorentzVector.from_pt_eta_phi_mass(30.0, 0.0, 0.0, 0.938)
+        assert abs(v.mass - 0.938) < 1e-6
+
+    # -- delta_r --------------------------------------------------------------
+
+    def test_delta_r_same_particle_zero(self):
+        """ΔR between a particle and itself = 0."""
+        v = kinematics.LorentzVector(E=50.0, px=30.0, py=20.0, pz=10.0)
+        assert abs(v.delta_r(v)) < 1e-12
+
+    def test_delta_r_eta_separation(self):
+        """Two particles separated only in η: ΔR = |Δη|."""
+        v1 = kinematics.LorentzVector.from_pt_eta_phi_mass(30.0, 0.0, 0.0)
+        v2 = kinematics.LorentzVector.from_pt_eta_phi_mass(30.0, 0.5, 0.0)
+        assert abs(v1.delta_r(v2) - 0.5) < 1e-6
+
+    def test_delta_r_phi_wrapping(self):
+        """ΔR uses minimum Δφ (wrapped to [-π, π])."""
+        v1 = kinematics.LorentzVector.from_pt_eta_phi_mass(30.0, 0.0, math.pi - 0.1)
+        v2 = kinematics.LorentzVector.from_pt_eta_phi_mass(30.0, 0.0, -math.pi + 0.1)
+        # Minimum Δφ = 0.2 (not 2π - 0.2)
+        assert abs(v1.delta_r(v2) - 0.2) < 1e-6
+
+    # -- invariant_mass_with ---------------------------------------------------
+
+    def test_invariant_mass_with_z_boson(self):
+        """Z boson reconstruction via invariant_mass_with."""
+        mu = self._muon()
+        antimu = self._antimuon()
+        M = mu.invariant_mass_with(antimu)
+        assert abs(M - 90.0) < 1.0
+
+
+# ── decay_two_body ────────────────────────────────────────────────────────────
+
+
+class TestDecayTwoBody:
+    def test_decay_kinematics(self):
+        """Test energy and momentum conservation in rest frame."""
+        parent = np.array([[100.0, 0.0, 0.0, 0.0]])
+        p1, p2 = kinematics.decay_two_body(parent, 10.0, 20.0)
+
+        # Energy conservation
+        assert abs((p1[0, 0] + p2[0, 0]) - 100.0) < 1e-10
+        # Momentum conservation
+        assert abs(p1[0, 1] + p2[0, 1]) < 1e-10
+        assert abs(p1[0, 2] + p2[0, 2]) < 1e-10
+        assert abs(p1[0, 3] + p2[0, 3]) < 1e-10
+
+        # Masses correct
+        m1_obs = math.sqrt(
+            abs(p1[0, 0] ** 2 - p1[0, 1] ** 2 - p1[0, 2] ** 2 - p1[0, 3] ** 2)
+        )
+        m2_obs = math.sqrt(
+            abs(p2[0, 0] ** 2 - p2[0, 1] ** 2 - p2[0, 2] ** 2 - p2[0, 3] ** 2)
+        )
+        assert abs(m1_obs - 10.0) < 1e-5
+        assert abs(m2_obs - 20.0) < 1e-5
+
+    def test_forbidden_decay(self):
+        """Test parent mass less than sum of child masses."""
+        parent = np.array([[10.0, 0.0, 0.0, 0.0]])
+        p1, p2 = kinematics.decay_two_body(parent, 6.0, 5.0)
+        assert np.all(p1 == 0.0)
+        assert np.all(p2 == 0.0)
+
+    def test_boosted_decay(self):
+        """Test conservation in boosted frame."""
+        # Parent with mass 100 GeV, E = 200, px = pz = 0, py = sqrt(30000)
+        E = 200.0
+        py = math.sqrt(E**2 - 100.0**2)
+        parent = np.array([[E, 0.0, py, 0.0]])
+        p1, p2 = kinematics.decay_two_body(parent, 30.0, 40.0)
+
+        assert abs((p1[0, 0] + p2[0, 0]) - E) < 1e-9
+        assert abs(p1[0, 1] + p2[0, 1]) < 1e-9
+        assert abs(p1[0, 2] + p2[0, 2] - py) < 1e-9
+        assert abs(p1[0, 3] + p2[0, 3]) < 1e-9
+
+    def test_vectorized(self):
+        N = 1000
+        rng = np.random.default_rng(42)
+        pz = rng.uniform(-100, 100, N)
+        E = np.abs(pz) + rng.uniform(50, 100, N)
+        parent = np.zeros((N, 4))
+        parent[:, 0] = E
+        parent[:, 3] = pz
+
+        p1, p2 = kinematics.decay_two_body(parent, 10.0, 20.0)
+
+        # Check conservation
+        assert np.allclose(p1[:, 0] + p2[:, 0], parent[:, 0])
+        assert np.allclose(p1[:, 3] + p2[:, 3], parent[:, 3])

@@ -135,7 +135,7 @@ def _get_version() -> str:
     (e.g., in a development checkout before installation).
     """
     try:
-        from .. import __version__
+        from triples_sigfast import __version__
 
         return __version__
     except Exception:

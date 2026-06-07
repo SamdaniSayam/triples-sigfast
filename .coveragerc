@@ -1,5 +1,8 @@
 [run]
 source = triples_sigfast
+omit =
+    tests/*
+    */__pycache__/*
 
 [report]
 exclude_lines =

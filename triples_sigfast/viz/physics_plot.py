@@ -303,7 +303,7 @@ class PhysicsPlot:
         if interactive is None:
             self._interactive = (
                 _is_jupyter() and _plotly_available()
-            )  # pragma: no cover # pragma: no cover
+            )  # pragma: no cover
         else:
             self._interactive = interactive and _plotly_available()
 
@@ -315,9 +315,17 @@ class PhysicsPlot:
     # -- Style management ------------------------------------------------------
 
     def _apply_matplotlib_style(self) -> None:
-        """Apply journal style to matplotlib rcParams."""
+        """Apply journal style to matplotlib rcParams.
+
+        The original rcParams are saved so they can be restored later
+        via _restore_matplotlib_style(), preventing permanent mutation
+        of the global matplotlib state.
+        """
         import matplotlib as mpl
         from cycler import cycler
+
+        # Save original rcParams before modification.
+        self._original_rcParams = dict(mpl.rcParams)
 
         s = self._style
         mpl.rcParams.update(
@@ -342,6 +350,13 @@ class PhysicsPlot:
         )
         # grid_alpha must be set per-axes, not via rcParams
         self._grid_alpha = s.get("grid_alpha", 0.3)
+
+    def _restore_matplotlib_style(self) -> None:
+        """Restore matplotlib rcParams to the state before _apply_matplotlib_style()."""
+        if hasattr(self, "_original_rcParams"):
+            import matplotlib as mpl
+
+            mpl.rcParams.update(self._original_rcParams)
 
     @staticmethod
     def available_styles() -> list[str]:
@@ -431,7 +446,7 @@ class PhysicsPlot:
         errors = np.asarray(errors) if errors is not None else None
 
         if self._interactive:
-            return self._spectrum_plotly(  # pragma: no cover # pragma: no cover
+            return self._spectrum_plotly(  # pragma: no cover
                 energies,
                 counts,
                 smoothed,
@@ -555,7 +570,7 @@ class PhysicsPlot:
         label_counts,
         label_smoothed,
     ):
-        import plotly.graph_objects as go  # pragma: no cover # pragma: no cover
+        import plotly.graph_objects as go  # pragma: no cover
 
         colors = self._style["color_cycle"]
 
@@ -770,7 +785,7 @@ class PhysicsPlot:
         }
 
         if self._interactive:
-            return self._shielding_plotly(  # pragma: no cover # pragma: no cover
+            return self._shielding_plotly(  # pragma: no cover
                 curves, thickness_range, title, xlabel, ylabel, yscale, energy_mev
             )
         return self._shielding_matplotlib(
@@ -821,7 +836,7 @@ class PhysicsPlot:
     def _shielding_plotly(  # pragma: no cover
         self, curves, thickness_range, title, xlabel, ylabel, yscale, energy_mev
     ):
-        import plotly.graph_objects as go  # pragma: no cover # pragma: no cover
+        import plotly.graph_objects as go  # pragma: no cover
 
         colors = self._style["color_cycle"]
 
@@ -889,7 +904,7 @@ class PhysicsPlot:
             If True, apply log10 scale to dose values.
         """
         if self._interactive:
-            return self._dose_map_plotly(  # pragma: no cover # pragma: no cover # pragma: no cover # pragma: no cover
+            return self._dose_map_plotly(  # pragma: no cover
                 mesh_x,
                 mesh_y,
                 dose_values,
@@ -962,7 +977,7 @@ class PhysicsPlot:
         colormap,
         log_scale,
     ):
-        import plotly.graph_objects as go  # pragma: no cover # pragma: no cover # pragma: no cover # pragma: no cover
+        import plotly.graph_objects as go  # pragma: no cover
 
         Z = dose_values.T
         if log_scale:
@@ -1020,7 +1035,7 @@ class PhysicsPlot:
         converged = np.less(relative_errors, threshold)
 
         if self._interactive:
-            return self._convergence_plotly(  # pragma: no cover # pragma: no cover # pragma: no cover # pragma: no cover
+            return self._convergence_plotly(  # pragma: no cover
                 x, relative_errors, converged, threshold, title, xlabel, ylabel
             )
         return self._convergence_matplotlib(
@@ -1077,7 +1092,7 @@ class PhysicsPlot:
     def _convergence_plotly(
         self, x, R, converged, threshold, title, xlabel, ylabel
     ):  # pragma: no cover
-        import plotly.graph_objects as go  # pragma: no cover # pragma: no cover # pragma: no cover # pragma: no cover
+        import plotly.graph_objects as go  # pragma: no cover
 
         colors = ["#639922" if c else "#E24B4A" for c in converged]
         fig = go.Figure()
@@ -1151,9 +1166,7 @@ class PhysicsPlot:
             import plotly.graph_objects as go
 
             if isinstance(fig, go.Figure):
-                if (
-                    ext == ".html"
-                ):  # pragma: no cover # pragma: no cover # pragma: no cover # pragma: no cover
+                if ext == ".html":  # pragma: no cover
                     fig.write_html(filepath)
                 elif ext in (".png", ".pdf", ".svg", ".eps"):  # pragma: no cover
                     fig.write_image(filepath, scale=save_dpi / 96)
@@ -1242,7 +1255,7 @@ class PhysicsPlot:
     @staticmethod
     def _hex_to_rgb(hex_color: str) -> str:  # pragma: no cover
         """Convert #RRGGBB to 'R,G,B' string for plotly rgba()."""
-        h = hex_color.lstrip("#")  # pragma: no cover # pragma: no cover
+        h = hex_color.lstrip("#")  # pragma: no cover
         r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
         return f"{r},{g},{b}"
 

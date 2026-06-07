@@ -324,7 +324,8 @@ pytest tests/ -v --cov=triples_sigfast --cov-report=term-missing
 | **v1.8.0** | ✅ Released | Plotext terminal plots, standardization of package interfaces |
 | **v1.8.1** | ✅ Released | Initial stubs for detectors and plasma packages, JIT kinematics updates |
 | **v1.8.2** | ✅ Released | Fully integrated physics-validated `detectors/` and `plasma/` packages, OOP `LorentzVector` class, unified material tables, 650+ tests |
-| **v2.0.0** | ⬜ Planned | Community launch, JOSS paper submission |
+| **v2.0.0** | ✅ Released | ROOT-like massive out-of-core pipelines (`SigPipeline`, `uproot.iterate`), pure Numba Monte Carlo event generation (RAMBO algorithm), and JIT-compiled SciPy fitting. |
+| **v2.1.0** | ⬜ Planned | Community launch, JOSS paper submission |
 
 ---
 

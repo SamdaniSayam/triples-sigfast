@@ -1,15 +1,6 @@
-pandas
+-r requirements.txt
+ruff>=0.4.0
+pytest>=7.0
+pytest-cov>=4.0
+h5py>=3.0
 memory-profiler
-numpy
-numba
-ruff
-uproot
-awkward
-matplotlib
-plotly
-click
-rich
-reportlab
-h5py
-pytest
-pytest-cov

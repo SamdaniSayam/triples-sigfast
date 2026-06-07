@@ -361,12 +361,15 @@ class TestWelcomePage:
     def _make_console(self, width=140):
         """Return an in-memory Console that captures output."""
         from io import StringIO
+
         from rich.console import Console as RichConsole
+
         return RichConsole(file=StringIO(), width=width, force_terminal=True)
 
     def test_print_welcome_not_animated_wide(self):
         """Full-width, non-animated path: exercises _draw_logo(wide=True)."""
         from triples_sigfast.cli.welcome import print_welcome
+
         con = self._make_console(width=140)
         print_welcome(animated=False, _console=con)
         output = con.file.getvalue()
@@ -375,6 +378,7 @@ class TestWelcomePage:
     def test_print_welcome_not_animated_narrow(self):
         """Narrow terminal path: exercises _draw_logo(wide=False)."""
         from triples_sigfast.cli.welcome import print_welcome
+
         con = self._make_console(width=80)
         print_welcome(animated=False, _console=con)
         output = con.file.getvalue()
@@ -382,8 +386,9 @@ class TestWelcomePage:
 
     def test_print_welcome_animated(self, monkeypatch):
         """Animated path: time.sleep calls must be triggered."""
-        from triples_sigfast.cli.welcome import print_welcome as pw
         import triples_sigfast.cli.welcome as wmod
+        from triples_sigfast.cli.welcome import print_welcome as pw
+
         sleep_calls = []
         monkeypatch.setattr(wmod.time, "sleep", lambda s: sleep_calls.append(s))
         monkeypatch.setattr(wmod.sys.stdout, "isatty", lambda: True)
@@ -395,6 +400,7 @@ class TestWelcomePage:
     def test_draw_logo_wide(self):
         """_draw_logo(wide=True) renders the block-letter logo."""
         import triples_sigfast.cli.welcome as wmod
+
         con = self._make_console(width=140)
         original = wmod.console
         wmod.console = con
@@ -409,6 +415,7 @@ class TestWelcomePage:
     def test_draw_logo_narrow(self):
         """_draw_logo(wide=False) renders the compact header."""
         import triples_sigfast.cli.welcome as wmod
+
         con = self._make_console(width=80)
         original = wmod.console
         wmod.console = con
@@ -422,11 +429,13 @@ class TestWelcomePage:
     def test_draw_tagline(self):
         """_draw_tagline renders the version string."""
         import triples_sigfast.cli.welcome as wmod
+
         con = self._make_console(width=140)
         original = wmod.console
         wmod.console = con
         try:
             from triples_sigfast import __version__
+
             wmod._draw_tagline(__version__)
         finally:
             wmod.console = original
@@ -436,6 +445,7 @@ class TestWelcomePage:
     def test_draw_feature_cards(self):
         """_draw_feature_cards renders the three-column panel."""
         import triples_sigfast.cli.welcome as wmod
+
         con = self._make_console(width=140)
         original = wmod.console
         wmod.console = con
@@ -449,6 +459,7 @@ class TestWelcomePage:
     def test_draw_performance_bar(self):
         """_draw_performance_bar renders performance stats."""
         import triples_sigfast.cli.welcome as wmod
+
         con = self._make_console(width=140)
         original = wmod.console
         wmod.console = con
@@ -462,6 +473,7 @@ class TestWelcomePage:
     def test_draw_quick_start(self):
         """_draw_quick_start renders copy-paste commands."""
         import triples_sigfast.cli.welcome as wmod
+
         con = self._make_console(width=140)
         original = wmod.console
         wmod.console = con
@@ -475,6 +487,7 @@ class TestWelcomePage:
     def test_draw_links(self):
         """_draw_links renders the pip/GitHub/PyPI footer."""
         import triples_sigfast.cli.welcome as wmod
+
         con = self._make_console(width=140)
         original = wmod.console
         wmod.console = con
@@ -488,6 +501,7 @@ class TestWelcomePage:
     def test_draw_quote(self):
         """_draw_quote renders a physics quote."""
         import triples_sigfast.cli.welcome as wmod
+
         con = self._make_console(width=140)
         original = wmod.console
         wmod.console = con
@@ -502,14 +516,16 @@ class TestWelcomePage:
     def test_get_version_returns_string(self):
         """_get_version should return the installed version string."""
         from triples_sigfast.cli.welcome import _get_version
+
         v = _get_version()
         assert isinstance(v, str)
         assert len(v) > 0
 
     def test_non_tty_disables_animation(self, monkeypatch):
         """When stdout is not a TTY, animated=True must be overridden."""
-        from triples_sigfast.cli.welcome import print_welcome as pw
         import triples_sigfast.cli.welcome as wmod
+        from triples_sigfast.cli.welcome import print_welcome as pw
+
         sleep_calls = []
         monkeypatch.setattr(wmod.time, "sleep", lambda s: sleep_calls.append(s))
         monkeypatch.setattr(wmod.sys.stdout, "isatty", lambda: False)

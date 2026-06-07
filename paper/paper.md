@@ -80,8 +80,9 @@ experience. `triples-sigfast` fills this gap.
 core layer (`triples_sigfast.core`) provides GIL-free signal processing
 via Numba JIT compilation. The domain layer comprises nuclear physics
 (`triples_sigfast.nuclear`), Monte Carlo statistics (`triples_sigfast.stats`),
-and simulation file readers (`triples_sigfast.io`). The presentation layer
-provides visualization (`triples_sigfast.viz`) and a command-line interface
+detector physics (`triples_sigfast.detectors`), plasma physics (`triples_sigfast.plasma`),
+high-energy physics (`triples_sigfast.hep`), and simulation file readers (`triples_sigfast.io`).
+The presentation layer provides visualization (`triples_sigfast.viz`) and a command-line interface
 (`triples_sigfast.cli`). Each submodule is independently testable and
 importable. The library uses a universal `SimReader` abstraction that
 auto-detects simulation code format from file extension and delegates to
@@ -197,8 +198,16 @@ format-specific backends:
 - `MCNPReader` — MCNP6 MCTAL tally format
 - `SerpentReader` — SERPENT2 detector output, k-effective, burnup
 
-All readers expose a unified API: `get_spectrum()`, `get_tally()`,
 `summary()`, and `export_csv()`.
+
+## High-Energy Physics, Detectors, and Plasma Physics
+
+The library extends its JIT-compiled analysis capabilities to experimental physics:
+
+- **High-Energy Physics Kinematics**: Fast coordinate transforms and relativistic 4-vector algebra via a vectorized JIT backend and a convenience `LorentzVector` OOP class.
+- **Detector Response Models**: Intrinsic efficiencies and resolution models (Fano factor limit) for NaI, HPGe, He-3, and BF3 counters.
+- **Fusion Neutronics**: D-T and D-D neutron source spectrum broadening, Bosch-Hale thermonuclear reaction rates, and structural activation saturation.
+
 
 ## Visualization and Reporting
 
@@ -230,9 +239,9 @@ without programming experience: `analyze`, `compare`, `dose`, `shield`,
 
 # Testing
 
-The library comprises 1,053 statements across 23 Python modules,
-validated by 385 unit and integration tests achieving 100% code coverage,
-tested on Ubuntu, macOS, and Windows across Python 3.10, 3.11, and 3.12
+The library comprises 1,989 statements across 30 Python modules,
+validated by 650 unit and integration tests achieving 96.78% code coverage,
+tested on Ubuntu, macOS, and Windows across Python 3.10, 3.11, 3.12, and 3.13
 via a 9-job GitHub Actions CI matrix.
 
 # Acknowledgements

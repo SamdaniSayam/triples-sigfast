@@ -25,27 +25,20 @@ plasma    -- Plasma physics models (fusion neutronics and material activation)
 
 # ---------------------------------------------------------------------------
 # Package version string.
-# Must be kept in sync with pyproject.toml and setup.py.
+# Uses importlib.metadata to stay in sync with pyproject.toml automatically.
 # ---------------------------------------------------------------------------
-__version__ = "1.8.2"
+try:
+    from importlib.metadata import version as _pkg_version
+
+    __version__ = _pkg_version("triples-sigfast")
+except Exception:
+    __version__ = "2.0.0"
 
 # ---------------------------------------------------------------------------
 # Core signal processing.
 # Symbols are re-exported explicitly so that static analysers and IDEs can
 # resolve them without inspecting submodule internals.
 # ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-# High-energy physics sub-package.
-# Imported as a namespace (not unpacked) to defer Numba JIT compilation until
-# a caller actually accesses hep.* symbols.  This avoids JIT warmup cost for
-# users who only need the nuclear physics side of the library.
-# ---------------------------------------------------------------------------
-from . import hep as hep
-
-# ---------------------------------------------------------------------------
-# PDF report generator -- available at the top level for convenience.
-# ---------------------------------------------------------------------------
-from .cli.report import AutoReport as AutoReport
 from .core.signal import attenuation as attenuation
 from .core.signal import attenuation_series as attenuation_series
 from .core.signal import detect_anomalies as detect_anomalies
@@ -55,3 +48,41 @@ from .core.signal import find_peaks as find_peaks
 from .core.signal import flux_to_dose as flux_to_dose
 from .core.signal import rolling_average as rolling_average
 from .core.signal import savitzky_golay as savitzky_golay
+
+# ---------------------------------------------------------------------------
+# Lazy imports for heavy sub-packages.
+# The hep sub-package and AutoReport are loaded on first access to avoid
+# triggering Numba JIT compilation and reportlab loading at import time.
+# ---------------------------------------------------------------------------
+__all__ = [
+    # Core signal processing
+    "rolling_average",
+    "ema",
+    "ema_crossover_strategy",
+    "detect_anomalies",
+    "savitzky_golay",
+    "find_peaks",
+    "flux_to_dose",
+    "attenuation",
+    "attenuation_series",
+    # Lazy-loaded
+    "hep",
+    "AutoReport",
+    # Version
+    "__version__",
+]
+
+
+def __getattr__(name: str):
+    """Lazy-load heavy sub-packages on first access."""
+    if name == "hep":
+        from . import hep as _hep
+
+        globals()["hep"] = _hep
+        return _hep
+    if name == "AutoReport":
+        from .cli.report import AutoReport as _AutoReport
+
+        globals()["AutoReport"] = _AutoReport
+        return _AutoReport
+    raise AttributeError(f"module 'triples_sigfast' has no attribute {name!r}")

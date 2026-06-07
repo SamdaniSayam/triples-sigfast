@@ -62,8 +62,11 @@ import re
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from rich.console import Console
 from rich.table import Table
+
+from triples_sigfast.core.pipeline import SigPipeline
 
 # Module-level console used by summary().
 _console = Console()
@@ -448,6 +451,53 @@ class RawReader:
         # Remove any rows where either array contains NaN or inf.
         mask = np.isfinite(counts) & np.isfinite(energies)
         return counts[mask].astype(float), energies[mask].astype(float)
+
+    def iterate(self, chunksize: int = 100000, **kwargs) -> SigPipeline:
+        """
+        Iterate over the file in chunks using pandas.read_csv.
+
+        Returns a SigPipeline for lazy processing of the chunks.
+        """
+        # Determine the header row offset. We can count comments/blanks.
+        # However, read_csv has a `comment` parameter, but it only accepts a single character.
+        # Since _COMMENT_CHARS has multiple characters, we might need a more robust way.
+        # But for text readers, we can just pass comment='#' for now, or just provide skip_blank_lines.
+
+        # We can find the line number of the header
+        skiprows = 0
+        for i, line in enumerate(self._raw_lines):
+            stripped = line.strip()
+            if not stripped or _is_comment(stripped):
+                skiprows += 1
+            else:
+                # the first non-comment non-blank is either header or data
+                break
+
+        # If we have headers but read_csv needs them, we can just skip the rows before it.
+        # But our parsing logic is already complex. Just using read_csv on the file path.
+        iterator = pd.read_csv(
+            self.filepath,
+            sep=self._delimiter if self._delimiter else r"\s+",
+            chunksize=chunksize,
+            skiprows=skiprows,
+            names=self._headers if self._headers else None,
+            header=0
+            if (
+                self._headers
+                and skiprows < len(self._raw_lines)
+                and any(
+                    re.search(r"[a-zA-Z]", p)
+                    for p in (
+                        self._raw_lines[skiprows].split(self._delimiter)
+                        if self._delimiter
+                        else self._raw_lines[skiprows].split()
+                    )
+                )
+            )
+            else None,
+            **kwargs,
+        )
+        return SigPipeline(iterator)
 
     def get_tally(self, name: str) -> dict:
         """Return a named column as a tally dictionary.

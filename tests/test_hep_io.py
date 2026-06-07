@@ -360,3 +360,151 @@ class TestHepMCSimReader:
 
         r = SimReader(p)
         assert r.format == "hepmc"
+
+
+# ── HepMCReader edge-case tests ───────────────────────────────────────────────
+
+
+class TestHepMCReaderEdgeCases:
+    """Edge cases that cover the previously uncovered branches in hepmc.py."""
+
+    def test_file_without_end_listing_marker(self, tmp_path):
+        """Files that never reach END_EVENT_LISTING are still parsed correctly."""
+        from triples_sigfast.io.hepmc import HepMCReader
+
+        content = (
+            "HepMC::Version 3.02.05\n"
+            "HepMC::Asciiv3-START_EVENT_LISTING\n"
+            "E 0 1 1\n"
+            "U GEV MM\n"
+            "W 1.0\n"
+            "P 1 -1 13  10.0 2.0 5.0 11.4 0.106 1\n"
+            "P 2 -1 -13 -10.0 -2.0 5.0 11.4 0.106 1\n"
+            # No END_EVENT_LISTING
+        )
+        p = tmp_path / "no_end.hepmc"
+        p.write_text(content)
+        r = HepMCReader(str(p))
+        assert r.n_events() >= 1
+
+    def test_empty_status_filter_returns_empty_arrays(self, tmp_path):
+        """Filtering for a status with no matching particles gives empty arrays."""
+        from triples_sigfast.io.hepmc import HepMCReader
+
+        content = (
+            "HepMC::Version 3.02.05\n"
+            "HepMC::Asciiv3-START_EVENT_LISTING\n"
+            "E 0 1 1\n"
+            "U GEV MM\n"
+            "W 1.0\n"
+            "P 1 -1 13  10.0 2.0 5.0 11.4 0.106 1\n"
+            "HepMC::Asciiv3-END_EVENT_LISTING\n"
+        )
+        p = tmp_path / "single.hepmc"
+        p.write_text(content)
+        r = HepMCReader(str(p))
+        # Request status=99 which doesn't exist
+        result = r.get_particles(status=99)
+        assert len(result["E"]) == 0
+        assert result["E"].dtype == float
+
+    def test_file_without_units_line(self, tmp_path):
+        """Parsing succeeds even without a U (units) record."""
+        from triples_sigfast.io.hepmc import HepMCReader
+
+        content = (
+            "HepMC::Version 3.02.05\n"
+            "HepMC::Asciiv3-START_EVENT_LISTING\n"
+            "E 0 1 1\n"
+            "W 1.0\n"
+            "P 1 -1 13  15.0 3.0 7.0 16.8 0.106 1\n"
+            "HepMC::Asciiv3-END_EVENT_LISTING\n"
+        )
+        p = tmp_path / "no_units.hepmc"
+        p.write_text(content)
+        r = HepMCReader(str(p))
+        assert r.n_events() >= 1
+
+    def test_multiple_events_weight_parsing(self, tmp_path):
+        """W records parse different weights per event."""
+        from triples_sigfast.io.hepmc import HepMCReader
+
+        content = (
+            "HepMC::Version 3.02.05\n"
+            "HepMC::Asciiv3-START_EVENT_LISTING\n"
+            "E 0 1 1\n"
+            "U GEV MM\n"
+            "W 2.5\n"
+            "P 1 -1 13  10.0 2.0 5.0 11.4 0.106 1\n"
+            "E 1 1 1\n"
+            "U GEV MM\n"
+            "W 0.5\n"
+            "P 2 -1 -13 -10.0 -2.0 5.0 11.4 0.106 1\n"
+            "HepMC::Asciiv3-END_EVENT_LISTING\n"
+        )
+        p = tmp_path / "weights.hepmc"
+        p.write_text(content)
+        r = HepMCReader(str(p))
+        assert r.n_events() >= 2
+        weights = [e["weight"] for e in r._events]
+        assert 2.5 in weights
+        assert 0.5 in weights
+
+    def test_no_events_raises_on_get_particles(self, tmp_path):
+        """get_particles() on an effectively empty file raises RuntimeError."""
+        from triples_sigfast.io.hepmc import HepMCReader
+
+        # File has correct headers but no P lines at all → _events stays empty
+        content = (
+            "HepMC::Version 3.02.05\n"
+            "HepMC::Asciiv3-START_EVENT_LISTING\n"
+            "HepMC::Asciiv3-END_EVENT_LISTING\n"
+        )
+        p = tmp_path / "empty.hepmc"
+        p.write_text(content)
+        r = HepMCReader(str(p))
+        with pytest.raises(RuntimeError, match="No events"):
+            r.get_particles()
+
+    def test_units_record_both_fields(self, tmp_path):
+        """U record correctly sets both momentum and length units."""
+        from triples_sigfast.io.hepmc import HepMCReader
+
+        content = (
+            "HepMC::Version 3.02.05\n"
+            "HepMC::Asciiv3-START_EVENT_LISTING\n"
+            "E 0 1 1\n"
+            "U MEV CM\n"
+            "W 1.0\n"
+            "P 1 -1 13  100.0 20.0 50.0 114.0 106.0 1\n"
+            "HepMC::Asciiv3-END_EVENT_LISTING\n"
+        )
+        p = tmp_path / "mev_cm.hepmc"
+        p.write_text(content)
+        r = HepMCReader(str(p))
+        assert r._momentum_unit == "MEV"
+        assert r._length_unit == "CM"
+
+    def test_truncated_p_line_ignored(self, tmp_path):
+        """P lines with fewer than 10 fields are skipped without crashing."""
+        from triples_sigfast.io.hepmc import HepMCReader
+
+        content = (
+            "HepMC::Version 3.02.05\n"
+            "HepMC::Asciiv3-START_EVENT_LISTING\n"
+            "E 0 1 1\n"
+            "U GEV MM\n"
+            "W 1.0\n"
+            "P 1 -1\n"  # truncated — missing most fields
+            "P 2 -1 13  10.0 2.0 5.0 11.4 0.106 1\n"  # valid
+            "HepMC::Asciiv3-END_EVENT_LISTING\n"
+        )
+        p = tmp_path / "truncated_p.hepmc"
+        p.write_text(content)
+        r = HepMCReader(str(p))
+        assert r.n_events() >= 1
+        result = r.get_particles()
+        # Only 1 valid particle per valid event, truncated one was skipped
+        # Count only events that have particles
+        n_particles = len(result["E"])
+        assert n_particles >= 1
