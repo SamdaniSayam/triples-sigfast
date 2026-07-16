@@ -20,7 +20,16 @@ FLUKA Manual: https://fluka.cern/documentation
 
 from __future__ import annotations
 
+import os
+
 import numpy as np
+
+__all__ = [
+    "FlukaReader",
+]
+
+# -- Maximum file size for full-file reads (2 GB) ----------------------------
+_MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024
 
 
 class FlukaReader:
@@ -47,13 +56,22 @@ class FlukaReader:
     def __init__(self, filepath: str) -> None:
         self.filepath = filepath
         self._detectors: dict[str, dict] = {}
+
+        # Guard against unbounded file reads.
+        file_size = os.path.getsize(filepath)
+        if file_size > _MAX_FILE_SIZE:
+            raise ValueError(
+                f"FLUKA file '{filepath}' is {file_size / (1024**3):.2f} GB, "
+                f"exceeding the {_MAX_FILE_SIZE / (1024**3):.0f} GB limit."
+            )
+
         self._parse()
 
     # -- Parsing -----------------------------------------------------------
 
     def _parse(self) -> None:
         """Parse all detector blocks from the FLUKA output file."""
-        with open(self.filepath) as f:
+        with open(self.filepath, encoding="utf-8", errors="replace") as f:
             content = f.read()
 
         self._parse_detector_blocks(content)
@@ -73,10 +91,16 @@ class FlukaReader:
         energies: list[float] = []
         values: list[float] = []
         errors: list[float] = []
+        detector_count = 0
 
         def _flush() -> None:
-            if current_name and values:
-                self._detectors[current_name] = {
+            nonlocal detector_count
+            if values:
+                name = current_name
+                if name is None:
+                    name = f"detector_{detector_count}"
+                    detector_count += 1
+                self._detectors[name] = {
                     "name": current_name,
                     "estimator": current_estimator,
                     "values": np.array(values, dtype=np.float64),

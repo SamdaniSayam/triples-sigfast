@@ -47,6 +47,10 @@ import numpy as np
 
 from triples_sigfast.core.pipeline import SigPipeline
 
+__all__ = [
+    "SimReader",
+]
+
 # ---------------------------------------------------------------------------
 # Format detection map
 # ---------------------------------------------------------------------------

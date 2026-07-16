@@ -29,7 +29,16 @@ Format spec:  https://gitlab.cern.ch/hepmc/HepMC3
 
 from __future__ import annotations
 
+import os
+
 import numpy as np
+
+__all__ = [
+    "HepMCReader",
+]
+
+# -- Maximum file size for full-file reads (2 GB) ----------------------------
+_MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024
 
 # -- Column indices for 'P' particle lines -------------------------------------
 #  P  id  vid  pid  px  py  pz  e  m  status  [attributes...]
@@ -71,6 +80,15 @@ class HepMCReader:
         self._events: list[dict] = []
         self._momentum_unit: str = "GEV"
         self._length_unit: str = "MM"
+
+        # Guard against unbounded file reads.
+        file_size = os.path.getsize(filepath)
+        if file_size > _MAX_FILE_SIZE:
+            raise ValueError(
+                f"HepMC file '{filepath}' is {file_size / (1024**3):.2f} GB, "
+                f"exceeding the {_MAX_FILE_SIZE / (1024**3):.0f} GB limit."
+            )
+
         self._parse()
 
     # -- Parsing ---------------------------------------------------------------

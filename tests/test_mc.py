@@ -44,11 +44,11 @@ class TestRelativeError:
         expected = np.array([0.1, 0.05, 0.01])
         np.testing.assert_allclose(R, expected, rtol=1e-10)
 
-    def test_zero_bin_returns_inf(self):
-        """Zero-count bins must return inf (undefined R)."""
+    def test_zero_bin_returns_nan(self):
+        """Zero-count bins must return nan (undefined R)."""
         counts = np.array([0.0, 100.0])
         R = relative_error(counts)
-        assert np.isinf(R[0])
+        assert np.isnan(R[0])
         assert np.isfinite(R[1])
 
     def test_output_shape_matches_input(self, typical_counts):
@@ -88,11 +88,11 @@ class TestRelativeError:
         R = relative_error(counts)
         np.testing.assert_allclose(mre, R.mean(), rtol=1e-6)
 
-    def test_mean_relative_error_all_zero_returns_inf(self):
+    def test_mean_relative_error_all_zero_returns_nan(self):
         from triples_sigfast.stats.mc import mean_relative_error
 
         counts = np.array([0.0, 0.0])
-        assert np.isinf(mean_relative_error(counts))
+        assert np.isnan(mean_relative_error(counts))
 
 
 # ── figure_of_merit ──────────────────────────────────────────────────────────
@@ -293,6 +293,6 @@ class TestMCIntegration:
         R = relative_error(sparse_counts)
         conv = is_converged(sparse_counts, threshold=0.05)
 
-        assert np.isinf(R[0])  # zero bin
+        assert np.isnan(R[0])  # zero bin
         assert conv[-1]  # 10,000 counts → converged
         assert not conv[0]  # zero bin → not converged

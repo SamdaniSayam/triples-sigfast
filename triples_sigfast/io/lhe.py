@@ -28,9 +28,17 @@ LHEF 3.0 standard: https://arxiv.org/abs/1405.0301
 
 from __future__ import annotations
 
+import os
 import re
 
 import numpy as np
+
+__all__ = [
+    "LHEReader",
+]
+
+# -- Maximum file size for full-file reads (2 GB) ----------------------------
+_MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024
 
 # -- LHE column indices (per-particle line, fixed format) ---------------------
 #  0: IDUP   (PDG particle ID)
@@ -75,6 +83,15 @@ class LHEReader:
         self.filepath = filepath
         self._events: list[dict] = []
         self._init_header: str = ""
+
+        # Guard against unbounded file reads.
+        file_size = os.path.getsize(filepath)
+        if file_size > _MAX_FILE_SIZE:
+            raise ValueError(
+                f"LHE file '{filepath}' is {file_size / (1024**3):.2f} GB, "
+                f"exceeding the {_MAX_FILE_SIZE / (1024**3):.0f} GB limit."
+            )
+
         self._parse()
 
     # -- Parsing ---------------------------------------------------------------

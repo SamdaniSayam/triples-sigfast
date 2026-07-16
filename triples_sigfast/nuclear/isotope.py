@@ -17,6 +17,11 @@ from __future__ import annotations
 
 import numpy as np
 
+__all__ = [
+    "Isotope",
+    "available_isotopes",
+]
+
 # -- Nuclear constants ---------------------------------------------------------
 _AVOGADRO = 6.02214076e23  # mol⁻¹
 _LN2 = np.log(2)

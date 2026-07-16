@@ -20,6 +20,13 @@ import numpy as np
 
 from triples_sigfast.nuclear.shielding import attenuation_with_buildup
 
+__all__ = [
+    "point_source",
+    "point_source_shielded",
+    "dose_rate_vs_distance",
+    "inverse_square_distance",
+]
+
 # -- ICRP 74 flux-to-dose coefficients h_phi [pSv.cm²] -----------------------
 # Converts photon/neutron fluence rate [cm⁻².s⁻¹] to ambient dose H*(10)
 # Photon energies: MeV; values: pSv.cm²

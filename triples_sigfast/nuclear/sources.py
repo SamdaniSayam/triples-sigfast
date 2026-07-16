@@ -18,6 +18,13 @@ from __future__ import annotations
 
 import numpy as np
 
+__all__ = [
+    "watt_spectrum",
+    "maxwell_spectrum",
+    "available_sources",
+    "watt_mean_energy",
+]
+
 # -- Watt spectrum parameters (a, b) for common fission sources ---------------
 # N(E) = C × exp(-E/a) × sinh(sqrt(b×E))
 # Source: ENDF/B-VIII.0, JEFF-3.3

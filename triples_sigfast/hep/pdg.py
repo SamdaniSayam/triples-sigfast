@@ -9,10 +9,23 @@ from __future__ import annotations
 
 import numpy as np
 from numba import njit, prange
-from particle import Particle
+
+__all__ = [
+    "get_mass",
+    "get_width",
+    "get_mass_array",
+    "get_width_array",
+]
 
 
 def _build_pdg_arrays() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    try:
+        from particle import Particle
+    except ImportError as e:
+        raise ImportError(
+            "The 'particle' package is required for PDG lookups. "
+            "Install with: pip install particle"
+        ) from e
     particles = Particle.findall()
     unique_particles = {}
     for p in particles:
@@ -47,49 +60,87 @@ def _build_pdg_arrays() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     return pdg_ids, masses, widths
 
 
-# Build arrays at import time
-_pdg_ids, _masses, _widths = _build_pdg_arrays()
+# Lazy-load PDG arrays — only built on first access, not at import time.
+_pdg_ids: np.ndarray | None = None
+_masses: np.ndarray | None = None
+_widths: np.ndarray | None = None
+_pdg_loaded = False
+
+
+def _ensure_pdg_loaded() -> None:
+    global _pdg_ids, _masses, _widths, _pdg_loaded
+    if not _pdg_loaded:
+        _pdg_ids, _masses, _widths = _build_pdg_arrays()
+        _pdg_loaded = True
 
 
 @njit(cache=True)
+def _get_mass_jit(pdgid: int, pdg_ids: np.ndarray, masses: np.ndarray) -> float:
+    """JIT-compiled mass lookup — assumes pdg_ids is sorted and loaded."""
+    idx = np.searchsorted(pdg_ids, pdgid)
+    if idx < len(pdg_ids) and pdg_ids[idx] == pdgid:
+        return masses[idx]
+    return 0.0
+
+
+@njit(cache=True)
+def _get_width_jit(pdgid: int, pdg_ids: np.ndarray, widths: np.ndarray) -> float:
+    """JIT-compiled width lookup — assumes pdg_ids is sorted and loaded."""
+    idx = np.searchsorted(pdg_ids, pdgid)
+    if idx < len(pdg_ids) and pdg_ids[idx] == pdgid:
+        return widths[idx]
+    return 0.0
+
+
+@njit(cache=True, parallel=True)
+def _get_mass_array_jit(
+    pdgids: np.ndarray, pdg_ids: np.ndarray, masses: np.ndarray
+) -> np.ndarray:
+    """JIT-compiled mass array lookup."""
+    n = len(pdgids)
+    out = np.zeros(n, dtype=np.float64)
+    for i in prange(n):
+        pid = pdgids[i]
+        idx = np.searchsorted(pdg_ids, pid)
+        if idx < len(pdg_ids) and pdg_ids[idx] == pid:
+            out[i] = masses[idx]
+    return out
+
+
+@njit(cache=True, parallel=True)
+def _get_width_array_jit(
+    pdgids: np.ndarray, pdg_ids: np.ndarray, widths: np.ndarray
+) -> np.ndarray:
+    """JIT-compiled width array lookup."""
+    n = len(pdgids)
+    out = np.zeros(n, dtype=np.float64)
+    for i in prange(n):
+        pid = pdgids[i]
+        idx = np.searchsorted(pdg_ids, pid)
+        if idx < len(pdg_ids) and pdg_ids[idx] == pid:
+            out[i] = widths[idx]
+    return out
+
+
 def get_mass(pdgid: int) -> float:
     """Get the mass of a particle in GeV by its PDG ID."""
-    idx = np.searchsorted(_pdg_ids, pdgid)
-    if idx < len(_pdg_ids) and _pdg_ids[idx] == pdgid:
-        return _masses[idx]
-    return 0.0
+    _ensure_pdg_loaded()
+    return _get_mass_jit(pdgid, _pdg_ids, _masses)
 
 
-@njit(cache=True)
 def get_width(pdgid: int) -> float:
     """Get the decay width of a particle in GeV by its PDG ID."""
-    idx = np.searchsorted(_pdg_ids, pdgid)
-    if idx < len(_pdg_ids) and _pdg_ids[idx] == pdgid:
-        return _widths[idx]
-    return 0.0
+    _ensure_pdg_loaded()
+    return _get_width_jit(pdgid, _pdg_ids, _widths)
 
 
-@njit(cache=True, parallel=True)
 def get_mass_array(pdgids: np.ndarray) -> np.ndarray:
     """Get the masses of particles in GeV by their PDG IDs in parallel."""
-    n = len(pdgids)
-    out = np.zeros(n, dtype=np.float64)
-    for i in prange(n):
-        pid = pdgids[i]
-        idx = np.searchsorted(_pdg_ids, pid)
-        if idx < len(_pdg_ids) and _pdg_ids[idx] == pid:
-            out[i] = _masses[idx]
-    return out
+    _ensure_pdg_loaded()
+    return _get_mass_array_jit(pdgids, _pdg_ids, _masses)
 
 
-@njit(cache=True, parallel=True)
 def get_width_array(pdgids: np.ndarray) -> np.ndarray:
     """Get the decay widths of particles in GeV by their PDG IDs in parallel."""
-    n = len(pdgids)
-    out = np.zeros(n, dtype=np.float64)
-    for i in prange(n):
-        pid = pdgids[i]
-        idx = np.searchsorted(_pdg_ids, pid)
-        if idx < len(_pdg_ids) and _pdg_ids[idx] == pid:
-            out[i] = _widths[idx]
-    return out
+    _ensure_pdg_loaded()
+    return _get_width_array_jit(pdgids, _pdg_ids, _widths)

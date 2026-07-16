@@ -35,6 +35,10 @@ from typing import Any, cast
 import numpy as np
 from numpy.typing import ArrayLike
 
+__all__ = [
+    "PhysicsPlot",
+]
+
 # -- Journal style definitions -------------------------------------------------
 
 _JOURNAL_STYLES: dict[str, dict] = {
@@ -497,63 +501,67 @@ class PhysicsPlot:
         fig, ax = plt.subplots(
             figsize=(self._style["fig_width"], self._style["fig_height"])
         )
+        try:
+            if self._style.get("grid", True):
+                ax.grid(alpha=self._grid_alpha)
 
-        if self._style.get("grid", True):
-            ax.grid(alpha=self._grid_alpha)
-
-        if errors is not None:
-            ax.fill_between(
+            if errors is not None:
+                ax.fill_between(
+                    energies,
+                    counts - errors,
+                    counts + errors,
+                    alpha=0.2,
+                    color=colors[0],
+                )
+            ax.step(
                 energies,
-                counts - errors,
-                counts + errors,
-                alpha=0.2,
+                counts,
+                where="mid",
                 color=colors[0],
-            )
-        ax.step(
-            energies,
-            counts,
-            where="mid",
-            color=colors[0],
-            alpha=0.6,
-            lw=self._style["line_width"] * 0.7,
-            label=label_counts,
-        )
-
-        if smoothed is not None:
-            ax.plot(
-                energies,
-                smoothed,
-                color=colors[1],
-                lw=self._style["line_width"],
-                label=label_smoothed,
+                alpha=0.6,
+                lw=self._style["line_width"] * 0.7,
+                label=label_counts,
             )
 
-        if peaks is not None and len(peaks) > 0:
-            y_peaks = smoothed[peaks] if smoothed is not None else counts[peaks]
-            ax.plot(
-                energies[peaks],
-                y_peaks,
-                "v",
-                color=colors[2],
-                ms=self._style["marker_size"] * 1.8,
-                zorder=5,
-                label=f"Peaks ({len(peaks)})",
-            )
-            for pi in peaks:
-                ax.axvline(energies[pi], color=colors[2], ls="--", alpha=0.4, lw=0.8)
+            if smoothed is not None:
+                ax.plot(
+                    energies,
+                    smoothed,
+                    color=colors[1],
+                    lw=self._style["line_width"],
+                    label=label_smoothed,
+                )
 
-        ax.set_title(title, fontsize=self._style["font_size"] + 1)
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
-        ax.set_xscale(xscale)
-        ax.set_yscale(yscale)
-        if smoothed is not None or peaks is not None:
-            ax.legend()
+            if peaks is not None and len(peaks) > 0:
+                y_peaks = smoothed[peaks] if smoothed is not None else counts[peaks]
+                ax.plot(
+                    energies[peaks],
+                    y_peaks,
+                    "v",
+                    color=colors[2],
+                    ms=self._style["marker_size"] * 1.8,
+                    zorder=5,
+                    label=f"Peaks ({len(peaks)})",
+                )
+                for pi in peaks:
+                    ax.axvline(
+                        energies[pi], color=colors[2], ls="--", alpha=0.4, lw=0.8
+                    )
 
-        plt.tight_layout()
-        self._figures.append(fig)
-        plt.close(fig)
-        return fig
+            ax.set_title(title, fontsize=self._style["font_size"] + 1)
+            ax.set_xlabel(xlabel)
+            ax.set_ylabel(ylabel)
+            ax.set_xscale(xscale)
+            ax.set_yscale(yscale)
+
+            if smoothed is not None or peaks is not None:
+                ax.legend()
+
+            plt.tight_layout()
+            self._figures.append(fig)
+            return fig
+        finally:
+            plt.close(fig)
 
     def _spectrum_plotly(  # pragma: no cover
         self,
@@ -689,31 +697,32 @@ class PhysicsPlot:
         fig, ax = plt.subplots(
             figsize=(self._style["fig_width"], self._style["fig_height"])
         )
+        try:
+            if self._style.get("grid", True):
+                ax.grid(alpha=self._grid_alpha)
 
-        if self._style.get("grid", True):
-            ax.grid(alpha=self._grid_alpha)
+            for i, r in enumerate(results):
+                color = colors[i % len(colors)]
+                ax.plot(
+                    r["energies"],
+                    r["smoothed"],
+                    color=color,
+                    lw=self._style["line_width"],
+                    label=r["label"],
+                )
 
-        for i, r in enumerate(results):
-            color = colors[i % len(colors)]
-            ax.plot(
-                r["energies"],
-                r["smoothed"],
-                color=color,
-                lw=self._style["line_width"],
-                label=r["label"],
-            )
+            ax.set_title(title, fontsize=self._style["font_size"] + 1)
+            ax.set_xlabel(xlabel)
+            ax.set_ylabel(ylabel)
+            ax.set_xscale(xscale)
+            ax.set_yscale(yscale)
+            ax.legend(fontsize=self._style.get("legend_fontsize", 10) - 1)
 
-        ax.set_title(title, fontsize=self._style["font_size"] + 1)
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
-        ax.set_xscale(xscale)
-        ax.set_yscale(yscale)
-        ax.legend(fontsize=self._style.get("legend_fontsize", 10) - 1)
-
-        plt.tight_layout()
-        self._figures.append(fig)
-        plt.close(fig)
-        return fig
+            plt.tight_layout()
+            self._figures.append(fig)
+            return fig
+        finally:
+            plt.close(fig)
 
     def _compare_spectra_plotly(  # pragma: no cover
         self, results, title, xlabel, ylabel, xscale, yscale
@@ -802,36 +811,39 @@ class PhysicsPlot:
         fig, ax = plt.subplots(
             figsize=(self._style["fig_width"], self._style["fig_height"])
         )
+        try:
+            if self._style.get("grid", True):
+                ax.grid(alpha=self._grid_alpha)
 
-        if self._style.get("grid", True):
-            ax.grid(alpha=self._grid_alpha)
+            for (mat, T), color in zip(curves.items(), colors):
+                ax.plot(
+                    thickness_range,
+                    T,
+                    color=color,
+                    lw=self._style["line_width"],
+                    label=mat.capitalize(),
+                )
 
-        for (mat, T), color in zip(curves.items(), colors):
-            ax.plot(
-                thickness_range,
-                T,
-                color=color,
-                lw=self._style["line_width"],
-                label=mat.capitalize(),
+            ax.axhline(
+                0.5, color="gray", ls=":", alpha=0.7, lw=0.8, label="50% (1 HVL)"
+            )
+            ax.axhline(
+                0.1, color="gray", ls="--", alpha=0.7, lw=0.8, label="10% (3.32 HVL)"
             )
 
-        ax.axhline(0.5, color="gray", ls=":", alpha=0.7, lw=0.8, label="50% (1 HVL)")
-        ax.axhline(
-            0.1, color="gray", ls="--", alpha=0.7, lw=0.8, label="10% (3.32 HVL)"
-        )
-
-        ax.set_title(
-            f"{title}\n({energy_mev} MeV, GP buildup-corrected)",
-            fontsize=self._style["font_size"] + 1,
-        )
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
-        ax.set_yscale(yscale)
-        ax.legend()
-        plt.tight_layout()
-        self._figures.append(fig)
-        plt.close(fig)
-        return fig
+            ax.set_title(
+                f"{title}\n({energy_mev} MeV, GP buildup-corrected)",
+                fontsize=self._style["font_size"] + 1,
+            )
+            ax.set_xlabel(xlabel)
+            ax.set_ylabel(ylabel)
+            ax.set_yscale(yscale)
+            ax.legend()
+            plt.tight_layout()
+            self._figures.append(fig)
+            return fig
+        finally:
+            plt.close(fig)
 
     def _shielding_plotly(  # pragma: no cover
         self, curves, thickness_range, title, xlabel, ylabel, yscale, energy_mev
@@ -945,25 +957,34 @@ class PhysicsPlot:
         fig, ax = plt.subplots(
             figsize=(self._style["fig_width"], self._style["fig_height"])
         )
+        try:
+            if self._style.get("grid", True):
+                ax.grid(alpha=self._grid_alpha)
 
-        if self._style.get("grid", True):
-            ax.grid(alpha=self._grid_alpha)
+            Z = dose_values.T
+            if log_scale:
+                positive_mask = Z > 0
+                if positive_mask.any():
+                    norm = mcolors.LogNorm(vmin=Z[positive_mask].min(), vmax=Z.max())
+                else:
+                    log_scale = False
+                    norm = None
+            else:
+                norm = None
 
-        Z = dose_values.T
-        norm = mcolors.LogNorm(vmin=Z[Z > 0].min(), vmax=Z.max()) if log_scale else None
+            im = ax.pcolormesh(mesh_x, mesh_y, Z, cmap=colormap, norm=norm)
+            cbar = fig.colorbar(im, ax=ax)
+            cbar.set_label(f"Dose rate ({unit})", fontsize=self._style["font_size"])
 
-        im = ax.pcolormesh(mesh_x, mesh_y, Z, cmap=colormap, norm=norm)
-        cbar = fig.colorbar(im, ax=ax)
-        cbar.set_label(f"Dose rate ({unit})", fontsize=self._style["font_size"])
-
-        ax.set_title(title, fontsize=self._style["font_size"] + 1)
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
-        ax.set_aspect("equal")
-        plt.tight_layout()
-        self._figures.append(fig)
-        plt.close(fig)
-        return fig
+            ax.set_title(title, fontsize=self._style["font_size"] + 1)
+            ax.set_xlabel(xlabel)
+            ax.set_ylabel(ylabel)
+            ax.set_aspect("equal")
+            plt.tight_layout()
+            self._figures.append(fig)
+            return fig
+        finally:
+            plt.close(fig)
 
     def _dose_map_plotly(  # pragma: no cover
         self,
@@ -1050,44 +1071,45 @@ class PhysicsPlot:
         fig, ax = plt.subplots(
             figsize=(self._style["fig_width"], self._style["fig_height"])
         )
+        try:
+            if self._style.get("grid", True):
+                ax.grid(alpha=self._grid_alpha)
 
-        if self._style.get("grid", True):
-            ax.grid(alpha=self._grid_alpha)
-
-        colors = ["#639922" if c else "#E24B4A" for c in converged]
-        ax.bar(
-            x,
-            R * 100,
-            color=colors,
-            alpha=0.8,
-            width=np.diff(x).mean() if len(x) > 1 else 1,
-        )
-        ax.axhline(
-            threshold * 100,
-            color="#E24B4A",
-            ls="--",
-            lw=1.5,
-            label=f"Threshold ({threshold * 100:.0f}%)",
-        )
-        ax.set_title(title, fontsize=self._style["font_size"] + 1)
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
-        ax.legend()
-        n_conv = converged.sum()
-        ax.text(
-            0.98,
-            0.95,
-            f"{n_conv}/{len(R)} converged",
-            transform=ax.transAxes,
-            ha="right",
-            va="top",
-            fontsize=self._style["font_size"],
-            color="#639922" if n_conv == len(R) else "#E24B4A",
-        )
-        plt.tight_layout()
-        self._figures.append(fig)
-        plt.close(fig)
-        return fig
+            colors = ["#639922" if c else "#E24B4A" for c in converged]
+            ax.bar(
+                x,
+                R * 100,
+                color=colors,
+                alpha=0.8,
+                width=np.diff(x).mean() if len(x) > 1 else 1,
+            )
+            ax.axhline(
+                threshold * 100,
+                color="#E24B4A",
+                ls="--",
+                lw=1.5,
+                label=f"Threshold ({threshold * 100:.0f}%)",
+            )
+            ax.set_title(title, fontsize=self._style["font_size"] + 1)
+            ax.set_xlabel(xlabel)
+            ax.set_ylabel(ylabel)
+            ax.legend()
+            n_conv = converged.sum()
+            ax.text(
+                0.98,
+                0.95,
+                f"{n_conv}/{len(R)} converged",
+                transform=ax.transAxes,
+                ha="right",
+                va="top",
+                fontsize=self._style["font_size"],
+                color="#639922" if n_conv == len(R) else "#E24B4A",
+            )
+            plt.tight_layout()
+            self._figures.append(fig)
+            return fig
+        finally:
+            plt.close(fig)
 
     def _convergence_plotly(
         self, x, R, converged, threshold, title, xlabel, ylabel

@@ -16,9 +16,16 @@ References
 
 from __future__ import annotations
 
+import warnings
 from functools import lru_cache
 
 import numpy as np
+
+__all__ = [
+    "attenuation_with_buildup",
+    "attenuation_series",
+    "available_materials",
+]
 
 # -- NIST mass attenuation coefficients mu/rho [cm^2/g] at common energies -----
 # Source: NIST XCOM database
@@ -224,7 +231,8 @@ def _gp_buildup(material: str, energy_mev: float, mfp: float) -> float:
     Compute GP buildup factor B(mux) for given material, energy, and mean free paths.
 
     Falls back to B=1 (no buildup, conservative) if GP coefficients are
-    unavailable for the material. Note: the GP formula is an empirical fit
+    unavailable for the material. Uses log-log interpolation between
+    tabulated energy points for accuracy. Note: the GP formula is an empirical fit
     and can exhibit non-monotone behaviour at large mfp values — this is
     physically expected and not a numerical error.
     """
@@ -232,10 +240,30 @@ def _gp_buildup(material: str, energy_mev: float, mfp: float) -> float:
     if mat not in _GP_COEFFS:
         return 1.0
 
-    # Find nearest tabulated energy
     energies = sorted(_GP_COEFFS[mat].keys())
-    nearest = min(energies, key=lambda e: abs(e - energy_mev))
-    b, c, a, Xk, d = _GP_COEFFS[mat][nearest]
+
+    # Clamp energy to tabulated range to avoid extrapolation errors.
+    if energy_mev <= energies[0]:
+        b, c, a, Xk, d = _GP_COEFFS[mat][energies[0]]
+    elif energy_mev >= energies[-1]:
+        b, c, a, Xk, d = _GP_COEFFS[mat][energies[-1]]
+    else:
+        # Log-log interpolation between adjacent tabulated energy points.
+        for i in range(len(energies) - 1):
+            if energies[i] <= energy_mev <= energies[i + 1]:
+                e_low, e_high = energies[i], energies[i + 1]
+                coeffs_low = _GP_COEFFS[mat][e_low]
+                coeffs_high = _GP_COEFFS[mat][e_high]
+                # Log-log interpolation factor
+                t = (np.log(energy_mev) - np.log(e_low)) / (
+                    np.log(e_high) - np.log(e_low)
+                )
+                b = coeffs_low[0] + t * (coeffs_high[0] - coeffs_low[0])
+                c = coeffs_low[1] + t * (coeffs_high[1] - coeffs_low[1])
+                a = coeffs_low[2] + t * (coeffs_high[2] - coeffs_low[2])
+                Xk = coeffs_low[3] + t * (coeffs_high[3] - coeffs_low[3])
+                d = coeffs_low[4] + t * (coeffs_high[4] - coeffs_low[4])
+                break
 
     x = mfp
     if x <= 0:
@@ -295,6 +323,14 @@ def attenuation_with_buildup(
     if energy_mev <= 0:
         raise ValueError(f"energy_mev must be > 0, got {energy_mev}")
 
+    # Warn if energy is outside the validated tabulated range (0.1–10.0 MeV).
+    if energy_mev < 0.1 or energy_mev > 10.0:
+        warnings.warn(
+            f"energy_mev={energy_mev} MeV is outside the validated range [0.1, 10.0] MeV. "
+            "Results may be inaccurate due to extrapolation.",
+            stacklevel=2,
+        )
+
     mu = _get_mu(material, energy_mev)
     mux = mu * thickness_cm  # mean free paths
 
@@ -308,8 +344,19 @@ def attenuation_with_buildup(
         elif geometry == "infinite_slab":
             B *= 1.10
 
+    transmission = B * np.exp(-mux)
+
     # Physical constraint: transmission cannot exceed 1.0
-    return float(min(B * np.exp(-mux), 1.0))
+    if transmission > 1.0:
+        warnings.warn(
+            f"Buildup factor B={B:.4f} produced transmission {transmission:.4f} > 1.0 "
+            f"(physically impossible). Clamping to 1.0. This may indicate energy/mfp "
+            f"values outside the GP model's validated range.",
+            stacklevel=2,
+        )
+        transmission = 1.0
+
+    return float(transmission)
 
 
 def attenuation_series(

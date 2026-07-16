@@ -1,12 +1,17 @@
 """
 triples_sigfast.cli.welcome
 ----------------------------
-Terminal welcome page for triples-sigfast.
+Terminal welcome page for triples-sigfast (v2.0.0+).
 
 Displayed automatically when a user runs `sigfast` with no subcommand, or
 explicitly with `sigfast welcome`.  The layout is inspired by the CERN ROOT
 framework's startup screen: a large ASCII logo, a feature grid, a performance
 summary panel, a quick-start command reference, and a closing physics quote.
+
+As of v2.0.0 the feature grid includes a fourth column for AI & Advanced
+capabilities (Gemini AI Copilot, RAMBO phase-space generation, Crystal Ball /
+Voigtian fits, out-of-core pipelines).  The quick-start section now lists the
+``sigfast chat`` and ``sigfast config set-key`` commands.
 
 The page degrades gracefully on narrow terminals (< 120 columns) by replacing
 the full two-row ASCII art with a compact single-line header.
@@ -15,7 +20,7 @@ Rendering sequence
 ------------------
 1. _draw_logo()            -- ASCII art banner (wide) or compact header (narrow)
 2. _draw_tagline()         -- version string and one-line feature summary
-3. _draw_feature_cards()   -- three-column module feature grid
+3. _draw_feature_cards()   -- four-column module feature grid
 4. _draw_performance_bar() -- key performance statistics panel
 5. _draw_quick_start()     -- copy-paste command reference block
 6. _draw_links()           -- pip / GitHub / PyPI footer links
@@ -135,11 +140,17 @@ def _get_version() -> str:
     (e.g., in a development checkout before installation).
     """
     try:
+        from importlib.metadata import version
+
+        return version("triples-sigfast")
+    except Exception:
+        pass
+    try:
         from triples_sigfast import __version__
 
         return __version__
     except Exception:
-        return "1.7.0"
+        return "2.0.0"
 
 
 def _draw_logo(wide: bool) -> None:
@@ -189,7 +200,7 @@ def _draw_tagline(version: str) -> None:
     tag.append(version, style=f"bold {_GOLD}")
     tag.append("  |  ", style=_DIM)
     tag.append(
-        "JIT-compiled  |  Nuclear Physics  |  High-Energy Physics  |  Signal Processing",
+        "JIT-compiled  |  Nuclear Physics  |  High-Energy Physics  |  Signal Processing  |  AI Copilot",
         style=_DIM,
     )
     tag.append("  ", style=_DIM)
@@ -197,9 +208,9 @@ def _draw_tagline(version: str) -> None:
 
 
 def _draw_feature_cards() -> None:
-    """Render three side-by-side feature panels (nuclear, HEP, signal/stats).
+    """Render four side-by-side feature panels (nuclear, HEP, signal/stats, AI).
 
-    Each panel lists the key capabilities of that sub-package.  The three-
+    Each panel lists the key capabilities of that sub-package.  The four-
     column layout is similar to the ROOT framework's module grid.
     """
 
@@ -234,6 +245,15 @@ def _draw_feature_cards() -> None:
         _bullet(_MAGENTA, "PDF AutoReport Generator"),
     ]
 
+    # AI & Advanced feature list
+    ai_lines = [
+        _bullet(_GOLD, "JIT-Compiled Isotope ID"),
+        _bullet(_GOLD, "Gemini AI Copilot"),
+        _bullet(_GOLD, "Out-of-Core Pipelines"),
+        _bullet(_GOLD, "RAMBO Phase Space Gen"),
+        _bullet(_GOLD, "Crystal Ball / Voigtian Fits"),
+    ]
+
     def _card(title: str, colour: str, lines: list[str]) -> Panel:
         """Build a Rich Panel for one feature column."""
         body = "\n".join(lines)
@@ -250,6 +270,7 @@ def _draw_feature_cards() -> None:
             _card("Nuclear Physics", _GREEN, nuclear_lines),
             _card("High-Energy Physics", _ACCENT, hep_lines),
             _card("Signal and Stats", _MAGENTA, signal_lines),
+            _card("AI & Advanced", _GOLD, ai_lines),
         ],
         equal=True,
         expand=True,
@@ -275,7 +296,7 @@ def _draw_performance_bar() -> None:
     table.add_row(
         _stat("@njit + prange", "Parallel JIT Backend", _GOLD),
         _stat("100M+ rows/s", "Throughput", _GREEN),
-        _stat("470 tests", "Test Suite", _ACCENT),
+        _stat("680+ tests", "Test Suite", _ACCENT),
         _stat(">= 15x faster", "vs. readline on 2 GB LHE", _MAGENTA),
     )
     console.print(
@@ -319,6 +340,16 @@ def _draw_quick_start() -> None:
             "LHE",
             "from triples_sigfast.io import LHEReader",
             "Block-buffered PYTHIA event file reader",
+        ),
+        (
+            "chat",
+            "sigfast chat simulation.root",
+            "AI copilot for physics data analysis",
+        ),
+        (
+            "config",
+            "sigfast config set-key YOUR_KEY",
+            "Set Gemini API key for copilot",
         ),
     ]
 
@@ -389,7 +420,8 @@ def print_welcome(animated: bool = True, _console: Console | None = None) -> Non
         animated = False
 
     # Determine whether the terminal is wide enough for the full logo.
-    wide = console.width >= 120
+    # Lowered from 120 to 80 so the ASCII art is almost always shown!
+    wide = console.width >= 80
 
     # Render each section in sequence, with optional brief delays between
     # them to produce a subtle fade-in effect on interactive terminals.

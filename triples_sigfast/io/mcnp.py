@@ -16,9 +16,17 @@ MCNP6 User Manual, LA-UR-13-24precision, Section 5.3 (MCTAL format)
 
 from __future__ import annotations
 
+import os
 import re
 
 import numpy as np
+
+__all__ = [
+    "MCNPReader",
+]
+
+# -- Maximum file size for full-file reads (2 GB) ----------------------------
+_MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024
 
 
 class MCNPReader:
@@ -46,12 +54,21 @@ class MCNPReader:
         self.filepath = filepath
         self._tallies: dict[str, dict] = {}
         self._header: dict = {}
+
+        # Guard against unbounded file reads.
+        file_size = os.path.getsize(filepath)
+        if file_size > _MAX_FILE_SIZE:
+            raise ValueError(
+                f"MCNP file '{filepath}' is {file_size / (1024**3):.2f} GB, "
+                f"exceeding the {_MAX_FILE_SIZE / (1024**3):.0f} GB limit."
+            )
+
         self._parse()
 
     # -- Parsing -----------------------------------------------------------
 
     def _parse(self) -> None:
-        with open(self.filepath) as f:
+        with open(self.filepath, encoding="utf-8", errors="replace") as f:
             content = f.read()
 
         self._parse_header(content)

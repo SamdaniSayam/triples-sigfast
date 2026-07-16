@@ -18,6 +18,8 @@ Available subcommands
     sigfast info
     sigfast welcome
     sigfast guide
+    sigfast config set-key  <API_KEY>
+    sigfast config show-key
 """
 
 from __future__ import annotations
@@ -66,6 +68,23 @@ def cli(ctx):  # pragma: no cover
         from .welcome import print_welcome
 
         print_welcome(animated=True)
+        return
+
+    # Verify package integrity before running any subcommand.
+    # Catches broken/incomplete installs early with a clear message.
+    try:
+        from triples_sigfast.core.signal import find_peaks  # noqa: F401
+    except ModuleNotFoundError:
+        from rich.console import Console
+
+        Console(stderr=True).print(
+            "[bold red]Installation error:[/bold red] "
+            "triples-sigfast is installed but some modules are missing.\n"
+            "This usually happens after a failed or partial install.\n\n"
+            "[bold]Fix:[/bold]  pip uninstall triples-sigfast -y && "
+            "pip install triples-sigfast"
+        )
+        sys.exit(1)
 
 
 # ---------------------------------------------------------------------------
@@ -162,10 +181,15 @@ def welcome():  # pragma: no cover
     "--window",
     default=11,
     show_default=True,
-    help="Savitzky-Golay filter window (must be odd).",
+    type=click.IntRange(min=3, max=None, clamp=False),
+    help="Savitzky-Golay filter window (must be odd, min=3).",
 )
 @click.option(
-    "--polyorder", default=3, show_default=True, help="Savitzky-Golay polynomial order."
+    "--polyorder",
+    default=3,
+    show_default=True,
+    type=click.IntRange(min=1, max=None, clamp=False),
+    help="Savitzky-Golay polynomial order (min=1).",
 )
 @click.option(
     "--threshold",
@@ -277,8 +301,16 @@ def analyze(
 
     # ---------- Step 4: Display results ----------
     if term_plot:
-        import plotext as plt
+        try:
+            import plotext as plt
+        except ImportError:
+            console.print(
+                "[yellow]Warning:[/yellow] plotext not installed. "
+                "Install with: pip install plotext"
+            )
+            term_plot = False
 
+    if term_plot:
         plt.clf()
         plt.theme("clear")
         plt.scatter(energies, counts, label="Raw counts", marker="dot", color="blue")
@@ -428,8 +460,16 @@ def compare(files, labels, energy, output, term_plot):  # pragma: no cover
 
     # ---------- Rank and display ----------
     if term_plot:
-        import plotext as plt
+        try:
+            import plotext as plt
+        except ImportError:
+            console.print(
+                "[yellow]Warning:[/yellow] plotext not installed. "
+                "Install with: pip install plotext"
+            )
+            term_plot = False
 
+    if term_plot:
         plt.clf()
         plt.theme("clear")
         for r in results:
@@ -722,7 +762,7 @@ def guide():  # pragma: no cover
         "[dim]Supported: .root / .flair / .mctal / .det / "
         ".csv / .tsv / .txt / .dat / .asc / .out[/dim]"
     )
-    file = click.prompt("Enter path to your file", type=click.Path())
+    file = click.prompt("Enter path to your file", type=click.Path(exists=True))
 
     try:
         from triples_sigfast.io import SimReader
@@ -819,3 +859,90 @@ def guide():  # pragma: no cover
     console.print(f"  Dose rate:   {dose_rate:.4f} uSv/hr")
     console.print(f"  Peaks found: {len(peaks)}")
     console.print("\n[dim]triples-sigfast  |  pip install triples-sigfast[/dim]")
+
+
+# ---------------------------------------------------------------------------
+# sigfast chat
+# ---------------------------------------------------------------------------
+
+
+@cli.command()
+@click.argument("file", required=False, type=click.Path(exists=True), default=None)
+def chat(file):  # pragma: no cover
+    """Launch the AI-powered physics copilot.
+
+    Optionally provide a simulation file to auto-analyze before chatting.
+
+    \b
+    Examples:
+        sigfast chat
+        sigfast chat simulation.root
+    """
+    from .chat import run_chat
+
+    run_chat(file_path=file)
+
+
+# ---------------------------------------------------------------------------
+# sigfast config
+# ---------------------------------------------------------------------------
+
+
+@cli.group()
+def config():  # pragma: no cover
+    """Manage triples-sigfast configuration."""
+    pass
+
+
+@config.command("set-key")
+@click.argument("api_key")
+def set_key(api_key):  # pragma: no cover
+    """Set the Gemini API key for the sigfast chat copilot.
+
+    The key is saved to ~/.sigfast/config.json.
+    You can also set the SIGFAST_API_KEY environment variable instead.
+
+    \b
+    Example:
+        sigfast config set-key YOUR_API_KEY_HERE
+    """
+    from .config import get_config_path, set_api_key
+
+    set_api_key(api_key)
+    console.print(f"[green]API key saved to:[/green] {get_config_path()}")
+    console.print("[dim]Tip: You can also set SIGFAST_API_KEY env variable.[/dim]")
+
+
+@config.command("show-key")
+def show_key():  # pragma: no cover
+    """Show whether an API key is configured (masked).
+
+    Displays the source (environment variable or config file) and the
+    last four characters of the key for verification.
+
+    \b
+    Example:
+        sigfast config show-key
+    """
+    import os
+
+    from .config import get_api_key, get_config_path
+
+    key = get_api_key()
+    if key is None:
+        console.print("[yellow]No API key configured.[/yellow]")
+        console.print(
+            "Set one with: [bold]sigfast config set-key YOUR_KEY[/bold]\n"
+            "Or export the [bold]SIGFAST_API_KEY[/bold] environment variable."
+        )
+        return
+
+    # Determine the source of the key.
+    if os.environ.get("SIGFAST_API_KEY"):
+        source = "environment variable (SIGFAST_API_KEY)"
+    else:
+        source = str(get_config_path())
+
+    masked = "*" * max(len(key) - 4, 0) + key[-4:]
+    console.print(f"[green]API key:[/green] {masked}")
+    console.print(f"[dim]Source: {source}[/dim]")

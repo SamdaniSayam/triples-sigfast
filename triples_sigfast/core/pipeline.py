@@ -9,6 +9,8 @@ Provides the SigPipeline class, which allows chaining of operations
 
 from collections.abc import Callable, Iterable
 
+__all__ = ["SigPipeline"]
+
 
 class SigPipeline:
     """

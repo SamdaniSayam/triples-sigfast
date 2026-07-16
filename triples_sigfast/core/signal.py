@@ -39,6 +39,18 @@ import numpy as np
 import pandas as pd
 from numba import njit
 
+__all__ = [
+    "rolling_average",
+    "ema",
+    "detect_anomalies",
+    "ema_crossover_strategy",
+    "savitzky_golay",
+    "find_peaks",
+    "flux_to_dose",
+    "attenuation",
+    "attenuation_series",
+]
+
 # ---------------------------------------------------------------------------
 # Internal utility
 # ---------------------------------------------------------------------------
@@ -508,7 +520,17 @@ def find_peaks(data, min_height: float = 0.0, min_distance: int = 1):
     if min_distance < 1:
         raise ValueError("min_distance must be >= 1.")
     clean_data = _ensure_float64_numpy(data)
-    return _numba_find_peaks(clean_data, min_height, min_distance)
+    peaks = _numba_find_peaks(clean_data, min_height, min_distance)
+    if len(peaks) >= 100_000:
+        import warnings as _warnings
+
+        _warnings.warn(
+            "Peak count reached the internal limit of 100 000. "
+            "Results may be truncated. Increase min_height or "
+            "min_distance to reduce the number of detected peaks.",
+            stacklevel=2,
+        )
+    return peaks
 
 
 # ---------------------------------------------------------------------------

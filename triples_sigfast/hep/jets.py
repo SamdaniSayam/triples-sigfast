@@ -42,6 +42,11 @@ from dataclasses import dataclass, field
 import numpy as np
 from numba import njit
 
+__all__ = [
+    "Jet",
+    "cluster_jets",
+]
+
 # ============================================================
 #  JET DATACLASS
 # ============================================================

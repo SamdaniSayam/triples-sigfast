@@ -11,3 +11,4 @@ reportlab>=4.0.0
 plotext>=5.0.0
 particle>=0.23.0
 scipy>=1.8.0
+google-genai>=0.2.0

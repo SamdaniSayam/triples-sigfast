@@ -68,8 +68,15 @@ from rich.table import Table
 
 from triples_sigfast.core.pipeline import SigPipeline
 
+__all__ = [
+    "RawReader",
+]
+
 # Module-level console used by summary().
 _console = Console()
+
+# Maximum file size for full-file reads (2 GB default).
+MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 * 1024
 
 
 # ---------------------------------------------------------------------------
@@ -214,6 +221,15 @@ class RawReader:
         self.filepath = filepath
         self._path = Path(filepath)
 
+        # Guard against unbounded file reads that cause OOM.
+        file_size = self._path.stat().st_size
+        if file_size > MAX_FILE_SIZE_BYTES:
+            raise ValueError(
+                f"File '{self._path.name}' is {file_size / (1024**3):.2f} GB, "
+                f"exceeding the {MAX_FILE_SIZE_BYTES / (1024**3):.0f} GB limit. "
+                "Use iterate() for chunked processing of large files."
+            )
+
         # Read the entire file as lines; 'replace' handles non-UTF-8 bytes
         # commonly found in legacy DAQ exports.
         self._raw_lines: list[str] = self._path.read_text(errors="replace").splitlines()
@@ -222,10 +238,15 @@ class RawReader:
         self._headers: list[str] = []
         self._data: np.ndarray = np.empty((0, 0))  # shape: (n_rows, n_cols)
         self._delimiter = None
+        self._skiprows: int = 0  # Lines to skip for iterate()
+        self._has_header_row: bool = False  # Whether first data line is a header
 
         # Parse the file immediately on construction so that any format errors
         # are raised before the caller attempts to use get_spectrum().
         self._parse()
+
+        # Free the raw text lines after parsing to reduce memory usage.
+        self._raw_lines = []
 
     # ------------------------------------------------------------------
     # Internal parsing pipeline
@@ -244,12 +265,15 @@ class RawReader:
         """
         potential_header: str | None = None
         data_lines: list[str] = []
+        skiprows = 0
 
         for line in self._raw_lines:
             stripped = line.strip()
             if not stripped:
+                skiprows += 1
                 continue  # Skip blank lines.
             if _is_comment(stripped):
+                skiprows += 1
                 continue  # Skip comment lines.
 
             # A line is a header if it contains at least one alphabetic token
@@ -316,6 +340,10 @@ class RawReader:
         elif len(self._headers) > n_cols:
             # Header row has more names than data columns: truncate.
             self._headers = self._headers[:n_cols]
+
+        # Store skiprows info for iterate() — the raw_lines are freed after parsing.
+        self._skiprows = skiprows
+        self._has_header_row = potential_header is not None
 
     # ------------------------------------------------------------------
     # Column resolution helper
@@ -458,43 +486,14 @@ class RawReader:
 
         Returns a SigPipeline for lazy processing of the chunks.
         """
-        # Determine the header row offset. We can count comments/blanks.
-        # However, read_csv has a `comment` parameter, but it only accepts a single character.
-        # Since _COMMENT_CHARS has multiple characters, we might need a more robust way.
-        # But for text readers, we can just pass comment='#' for now, or just provide skip_blank_lines.
-
-        # We can find the line number of the header
-        skiprows = 0
-        for i, line in enumerate(self._raw_lines):
-            stripped = line.strip()
-            if not stripped or _is_comment(stripped):
-                skiprows += 1
-            else:
-                # the first non-comment non-blank is either header or data
-                break
-
-        # If we have headers but read_csv needs them, we can just skip the rows before it.
-        # But our parsing logic is already complex. Just using read_csv on the file path.
+        # Use stored skiprows and header info from parsing phase.
         iterator = pd.read_csv(
             self.filepath,
             sep=self._delimiter if self._delimiter else r"\s+",
             chunksize=chunksize,
-            skiprows=skiprows,
+            skiprows=self._skiprows,
             names=self._headers if self._headers else None,
-            header=0
-            if (
-                self._headers
-                and skiprows < len(self._raw_lines)
-                and any(
-                    re.search(r"[a-zA-Z]", p)
-                    for p in (
-                        self._raw_lines[skiprows].split(self._delimiter)
-                        if self._delimiter
-                        else self._raw_lines[skiprows].split()
-                    )
-                )
-            )
-            else None,
+            header=0 if (self._headers and self._has_header_row) else None,
             **kwargs,
         )
         return SigPipeline(iterator)

@@ -13,6 +13,11 @@ import math
 import numpy as np
 from numba import njit, prange
 
+__all__ = [
+    "generate_phase_space",
+    "rambo",
+]
+
 
 @njit(fastmath=True, cache=True, parallel=True)
 def generate_phase_space(
@@ -74,7 +79,7 @@ def generate_phase_space(
                     r2 = 1e-10
 
                 c = 2.0 * r3 - 1.0
-                s = math.sqrt(1.0 - c * c)
+                s = math.sqrt(max(1.0 - c * c, 0.0))
                 phi = 2.0 * math.pi * r4
 
                 e = -math.log(r1 * r2)
@@ -89,7 +94,14 @@ def generate_phase_space(
                 Q3 += q[i, 3]
 
             M_Q2 = Q0 * Q0 - Q1 * Q1 - Q2 * Q2 - Q3 * Q3
-            M_Q = math.sqrt(M_Q2) if M_Q2 > 0 else 0.0
+            if M_Q2 <= 0.0:
+                for i in range(n_particles):
+                    out[i, ev, 0] = 0.0
+                    out[i, ev, 1] = 0.0
+                    out[i, ev, 2] = 0.0
+                    out[i, ev, 3] = 0.0
+                continue
+            M_Q = math.sqrt(M_Q2)
 
             b0 = -Q1 / M_Q
             b1 = -Q2 / M_Q
@@ -124,7 +136,8 @@ def generate_phase_space(
                     p2 = p[i, 1] * p[i, 1] + p[i, 2] * p[i, 2] + p[i, 3] * p[i, 3]
                     E_i = math.sqrt(masses[i] * masses[i] + xi * xi * p2)
                     f += E_i
-                    df += (xi * p2) / E_i
+                    if E_i > 0.0:
+                        df += (xi * p2) / E_i
                 if abs(f) < 1e-9 or df == 0.0:
                     break
                 xi = xi - f / df

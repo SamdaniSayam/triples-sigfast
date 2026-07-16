@@ -27,13 +27,9 @@ dependencies = [
     "uproot>=5.0.0",
     "awkward>=2.0.0",
     "matplotlib>=3.5.0",
-    "plotly>=5.0.0",
     "click>=8.0.0",
     "rich>=13.0.0",
     "reportlab>=4.0.0",
-    "plotext>=5.0.0",
-    "cycler>=0.11.0",
-    "particle>=0.23.0",
     "scipy>=1.8.0",
 ]
 
@@ -41,11 +37,24 @@ dependencies = [
 sigfast = "triples_sigfast.cli.main:cli"
 
 [project.optional-dependencies]
+chat = [
+    "google-genai>=0.2.0",
+]
+particle = [
+    "particle>=0.23.0",
+]
+plot = [
+    "plotly>=5.0.0",
+    "plotext>=5.0.0",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "ruff>=0.4.0",
     "h5py>=3.0",
+]
+all = [
+    "triples-sigfast[chat,plot,particle,dev]",
 ]
 
 [project.urls]

@@ -18,6 +18,14 @@ from __future__ import annotations
 import numpy as np
 from numba import njit, prange
 
+__all__ = [
+    "relative_error",
+    "mean_relative_error",
+    "figure_of_merit",
+    "is_converged",
+    "propagate_error",
+]
+
 # -- 1. Relative Error --------------------------------------------------------
 
 
@@ -44,7 +52,7 @@ def relative_error(counts: np.ndarray) -> np.ndarray:
     -------
     np.ndarray
         Relative error R for each bin. Shape matches the number of bins.
-        Returns np.inf for bins where the mean is zero (undefined).
+        Returns np.nan for bins where the mean is zero (undefined).
 
     Examples
     --------
@@ -60,7 +68,7 @@ def relative_error(counts: np.ndarray) -> np.ndarray:
     for i in prange(n):
         val = counts[i]
         if val <= 0.0:
-            result[i] = np.inf
+            result[i] = np.nan  # Undefined for zero/negative counts
         else:
             # Poisson approximation: σ = sqrt(N), R = 1/sqrt(N)
             result[i] = 1.0 / np.sqrt(val)
@@ -94,7 +102,7 @@ def mean_relative_error(counts: np.ndarray) -> float:
             total += 1.0 / np.sqrt(counts[i])
             valid += 1
     if valid == 0:
-        return np.inf
+        return np.nan
     return total / valid
 
 
@@ -145,7 +153,7 @@ def figure_of_merit(
 
     for i in range(n):
         r = rel_error[i]
-        if r <= 0.0 or np.isinf(r) or np.isnan(r):
+        if r <= 0.0 or np.isnan(r):
             result[i] = 0.0
         else:
             result[i] = 1.0 / (r * r * cpu_time)

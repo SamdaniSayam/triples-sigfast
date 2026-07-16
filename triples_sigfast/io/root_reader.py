@@ -16,6 +16,10 @@ import pandas as pd
 
 from triples_sigfast.core.pipeline import SigPipeline
 
+__all__ = [
+    "RootReader",
+]
+
 
 class RootReader:
     """
@@ -330,5 +334,15 @@ class RootReader:
     def __enter__(self):
         return self
 
-    def __exit__(self, *args):  # pragma: no cover
-        self._file.close()
+    def __exit__(self, *args):
+        self.close()
+
+    def close(self) -> None:
+        """Close the underlying ROOT file handle."""
+        if hasattr(self, "_file") and self._file is not None:
+            self._file.close()
+            self._file = None
+
+    def __del__(self) -> None:
+        """Ensure the file handle is closed when the object is garbage collected."""
+        self.close()

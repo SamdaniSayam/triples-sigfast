@@ -17,9 +17,17 @@ SERPENT2 Wiki: http://serpent.vtt.fi/mediawiki
 
 from __future__ import annotations
 
+import os
 import re
 
 import numpy as np
+
+__all__ = [
+    "SerpentReader",
+]
+
+# -- Maximum file size for full-file reads (2 GB) ----------------------------
+_MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024
 
 # Number of columns in a standard SERPENT2 detector array
 _DET_COLS = 12
@@ -51,12 +59,21 @@ class SerpentReader:
         self.filepath = filepath
         self._detectors: dict[str, dict] = {}
         self._scalars: dict[str, np.ndarray] = {}
+
+        # Guard against unbounded file reads.
+        file_size = os.path.getsize(filepath)
+        if file_size > _MAX_FILE_SIZE:
+            raise ValueError(
+                f"SERPENT file '{filepath}' is {file_size / (1024**3):.2f} GB, "
+                f"exceeding the {_MAX_FILE_SIZE / (1024**3):.0f} GB limit."
+            )
+
         self._parse()
 
     # -- Parsing -----------------------------------------------------------
 
     def _parse(self) -> None:
-        with open(self.filepath) as f:
+        with open(self.filepath, encoding="utf-8", errors="replace") as f:
             content = f.read()
 
         self._parse_arrays(content)
