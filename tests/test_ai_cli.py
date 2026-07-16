@@ -46,7 +46,9 @@ class TestGetApiKeyFromFile:
     def test_get_api_key_from_file(self, mock_config_file: MagicMock) -> None:
         """When no env var is present, the key is read from the config file."""
         mock_config_file.is_file.return_value = True
-        mock_config_file.read_text.return_value = json.dumps({"api_key": "file-key-xyz"})
+        mock_config_file.read_text.return_value = json.dumps(
+            {"api_key": "file-key-xyz"}
+        )
 
         # Need to also ensure env var is not set
         with patch.dict(os.environ, {}, clear=True):
@@ -67,7 +69,9 @@ class TestEnvOverridesFile:
     def test_env_overrides_file(self, mock_config_file: MagicMock) -> None:
         """Environment variable takes precedence over the config file."""
         mock_config_file.is_file.return_value = True
-        mock_config_file.read_text.return_value = json.dumps({"api_key": "file-key-xyz"})
+        mock_config_file.read_text.return_value = json.dumps(
+            {"api_key": "file-key-xyz"}
+        )
 
         with patch.dict(os.environ, {"SIGFAST_API_KEY": "env-wins"}):
             assert get_api_key() == "env-wins"
