@@ -32,7 +32,7 @@ try:
 
     __version__ = _pkg_version("triples-sigfast")
 except Exception:
-    __version__ = "2.0.0"
+    __version__ = "2.2.0"
 
 # ---------------------------------------------------------------------------
 # Core signal processing.

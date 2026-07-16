@@ -150,7 +150,7 @@ def _get_version() -> str:
 
         return __version__
     except Exception:
-        return "2.0.0"
+        return "2.2.0"
 
 
 def _draw_logo(wide: bool) -> None:
